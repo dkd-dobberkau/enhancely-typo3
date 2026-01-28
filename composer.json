@@ -1,5 +1,5 @@
 {
-    "name": "enhancely/enhancely",
+    "name": "enhancely/enhancely-for-typo3",
     "type": "typo3-cms-extension",
     "description": "Enhancely JSON-LD integration for TYPO3 - AI-generated structured data for SEO",
     "license": "GPL-2.0-or-later",

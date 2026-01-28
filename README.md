@@ -2,56 +2,84 @@
 
 AI-generated JSON-LD structured data for improved SEO and LLM visibility.
 
+[![TYPO3](https://img.shields.io/badge/TYPO3-12%20%7C%2013-orange.svg)](https://typo3.org/)
+[![PHP](https://img.shields.io/badge/PHP-8.2%2B-blue.svg)](https://php.net/)
+[![License](https://img.shields.io/badge/License-GPL--2.0--or--later-green.svg)](LICENSE)
+
+## What is Enhancely?
+
+Enhancely automatically generates Schema.org JSON-LD structured data for your web pages using AI. This helps search engines and AI platforms better understand your content, improving SEO and visibility.
+
 ## Installation
 
-### Via Composer (recommended)
-
 ```bash
-composer require enhancely/enhancely
+composer require enhancely/enhancely-for-typo3
 ```
 
-### Manual Installation
-
-1. Download the extension
-2. Upload to `typo3conf/ext/enhancely`
-3. Activate in Extension Manager
+Then activate the extension in the TYPO3 Extension Manager.
 
 ## Configuration
 
 1. Go to **Admin Tools > Settings > Extension Configuration**
 2. Select **enhancely**
-3. Configure the following settings:
+3. Configure:
 
-| Setting | Description |
-|---------|-------------|
-| API Key | Your Enhancely API key (get it from [enhancely.ai](https://enhancely.ai)) |
-| Enabled | Enable or disable JSON-LD generation |
-| Excluded Page Types | Comma-separated list of page types to exclude |
-| Cache Lifetime | Cache lifetime in seconds (default: 86400 = 24 hours) |
+| Setting | Description | Default |
+|---------|-------------|---------|
+| API Key | Your Enhancely API key from [enhancely.ai](https://enhancely.ai) | - |
+| Enabled | Enable/disable JSON-LD generation | true |
+| Excluded Page Types | Comma-separated doktypes to skip (e.g., `254,199`) | - |
+| Cache Lifetime | Cache duration in seconds | 86400 (24h) |
 
 ## How It Works
 
-1. The extension registers a PSR-15 middleware that runs after page rendering
-2. For each frontend request, it calls the Enhancely API with the page URL
-3. The API returns AI-generated JSON-LD structured data
-4. The JSON-LD is injected into the `<head>` section of the page
-5. ETags are cached to minimize API calls for unchanged content
+```
+Request → Middleware → Enhancely API → JSON-LD injected in <head>
+```
+
+1. PSR-15 middleware intercepts frontend responses
+2. Calls Enhancely API with the page URL
+3. API returns AI-generated JSON-LD
+4. JSON-LD is injected before `</head>`
+5. ETags are cached to minimize API calls
 
 ## Features
 
-- **Automatic JSON-LD Generation**: No manual schema markup required
-- **ETag Caching**: Efficient API usage through conditional requests
-- **TYPO3 Cache Integration**: Uses TYPO3's native caching framework
-- **Page Type Exclusion**: Skip specific page types (e.g., 404 pages)
-- **Error Handling**: Graceful degradation if API is unavailable
+- **Automatic JSON-LD**: No manual schema markup required
+- **ETag Caching**: Conditional requests minimize API usage
+- **TYPO3 Cache Integration**: Uses native caching framework
+- **Graceful Degradation**: Page renders normally if API fails
+- **URL Normalization**: Strips query params and fragments for consistent caching
+
+## API Response Handling
+
+| Status | Meaning | Action |
+|--------|---------|--------|
+| 200 | JSON-LD ready | Inject and cache |
+| 201/202 | Processing | Skip, retry on next request |
+| 412 | Not modified | Use cached version |
 
 ## Requirements
 
 - TYPO3 12.4+ or 13.x
 - PHP 8.2+
-- Valid Enhancely API key
+- Enhancely API key
 
-## Support
+## Development
 
-- Website: [enhancely.ai](https://enhancely.ai)
-- Documentation: [docs.enhancely.ai](https://docs.enhancely.ai)
+```bash
+# Install dependencies
+composer install
+
+# Run tests
+composer test
+```
+
+## License
+
+GPL-2.0-or-later. See [LICENSE](LICENSE).
+
+## Links
+
+- [Enhancely Website](https://enhancely.ai)
+- [API Documentation](https://docs.enhancely.ai)
