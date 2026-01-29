@@ -29,15 +29,23 @@ if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.]+)?$ ]]; then
     error "Invalid version format. Use semantic versioning (e.g., 1.0.0, 2.1.0-beta.1)"
 fi
 
+# Check if gh CLI is available
+if ! command -v gh &> /dev/null; then
+    error "GitHub CLI (gh) is not installed. Install it from https://cli.github.com"
+fi
+
 # Check for uncommitted changes
 if [[ -n $(git status --porcelain) ]]; then
     error "Working directory has uncommitted changes. Please commit or stash them first."
 fi
 
 # Check if tag already exists
-if git rev-parse "v$VERSION" >/dev/null 2>&1 || git rev-parse "$VERSION" >/dev/null 2>&1; then
-    error "Tag $VERSION or v$VERSION already exists."
+if git rev-parse "$VERSION" >/dev/null 2>&1; then
+    error "Tag $VERSION already exists."
 fi
+
+# Get previous tag for changelog
+PREVIOUS_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
 
 # Update version in ext_emconf.php
 info "Updating version in ext_emconf.php..."
@@ -62,8 +70,32 @@ info "Pushing to remote..."
 git push origin main
 git push origin "$VERSION"
 
+# Generate changelog
+info "Generating changelog..."
+if [[ -n "$PREVIOUS_TAG" ]]; then
+    CHANGELOG=$(git log --pretty=format:"- %s" "$PREVIOUS_TAG"..HEAD --no-merges | grep -v "chore: Bump version")
+else
+    CHANGELOG=$(git log --pretty=format:"- %s" --no-merges | grep -v "chore: Bump version")
+fi
+
+# Create GitHub release
+info "Creating GitHub release..."
+gh release create "$VERSION" \
+    --title "Release $VERSION" \
+    --notes "## What's Changed
+
+$CHANGELOG
+
+## Installation
+
+\`\`\`bash
+composer require enhancely/enhancely-for-typo3:$VERSION
+\`\`\`
+
+**Full Changelog**: https://github.com/dkd-dobberkau/enhancely-typo3/compare/${PREVIOUS_TAG:-HEAD~10}...$VERSION"
+
 success "Release $VERSION completed!"
 echo ""
-echo "Next steps:"
-echo "  1. Packagist will auto-update via webhook (if configured)"
-echo "  2. Create GitHub release: https://github.com/dkd-dobberkau/enhancely-typo3/releases/new?tag=$VERSION"
+echo "Links:"
+echo "  - GitHub: https://github.com/dkd-dobberkau/enhancely-typo3/releases/tag/$VERSION"
+echo "  - Packagist: https://packagist.org/packages/enhancely/enhancely-for-typo3#$VERSION"
