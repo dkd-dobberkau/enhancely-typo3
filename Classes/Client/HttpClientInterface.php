@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Enhancely;
+namespace Enhancely\Enhancely\Client;
 
 /**
  * Interface for HTTP client implementations.

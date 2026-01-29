@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Enhancely\Tests\Unit\Client\Exception;
 
-use Enhancely\Exception\ApiException;
+use Enhancely\Enhancely\Client\Exception\ApiException;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 

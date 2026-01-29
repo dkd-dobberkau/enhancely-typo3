@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Enhancely;
+namespace Enhancely\Enhancely\Client;
 
 /**
  * Response object for JSON-LD API calls.

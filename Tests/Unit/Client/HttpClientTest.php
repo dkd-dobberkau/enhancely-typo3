@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Enhancely\Tests\Unit\Client;
 
-use Enhancely\Exception\ApiException;
-use Enhancely\HttpClient;
+use Enhancely\Enhancely\Client\Exception\ApiException;
+use Enhancely\Enhancely\Client\HttpClient;
 use GuzzleHttp\Client as GuzzleClient;
 use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\HandlerStack;

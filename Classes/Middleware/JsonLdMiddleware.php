@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Enhancely\Enhancely\Middleware;
 
-use Enhancely\Client;
+use Enhancely\Enhancely\Client\Client;
 use Enhancely\Enhancely\Configuration\ExtensionConfiguration;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;

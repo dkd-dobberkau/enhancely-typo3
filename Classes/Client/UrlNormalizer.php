@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Enhancely;
+namespace Enhancely\Enhancely\Client;
 
 /**
  * Normalizes URLs for consistent caching.

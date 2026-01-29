@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Enhancely\Exception;
+namespace Enhancely\Enhancely\Client\Exception;
 
 /**
  * Exception thrown when the Enhancely API returns an error.

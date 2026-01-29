@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Enhancely\Tests\Unit\Client;
 
-use Enhancely\UrlNormalizer;
+use Enhancely\Enhancely\Client\UrlNormalizer;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Enhancely\Tests\Unit\Client;
 
-use Enhancely\JsonLdResponse;
+use Enhancely\Enhancely\Client\JsonLdResponse;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 

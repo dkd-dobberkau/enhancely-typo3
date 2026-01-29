@@ -16,8 +16,7 @@
     },
     "autoload": {
         "psr-4": {
-            "Enhancely\\Enhancely\\": "Classes/",
-            "Enhancely\\": "Classes/Client/"
+            "Enhancely\\Enhancely\\": "Classes/"
         }
     },
     "autoload-dev": {

@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Enhancely;
+namespace Enhancely\Enhancely\Client;
 
-use Enhancely\Exception\ApiException;
+use Enhancely\Enhancely\Client\Exception\ApiException;
 use GuzzleHttp\Client as GuzzleClient;
 use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\RequestOptions;

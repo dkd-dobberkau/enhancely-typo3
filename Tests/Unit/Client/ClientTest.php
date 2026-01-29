@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Enhancely\Tests\Unit\Client;
 
-use Enhancely\Client;
-use Enhancely\HttpClientInterface;
-use Enhancely\JsonLdResponse;
+use Enhancely\Enhancely\Client\Client;
+use Enhancely\Enhancely\Client\HttpClientInterface;
+use Enhancely\Enhancely\Client\JsonLdResponse;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
