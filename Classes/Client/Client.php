@@ -21,6 +21,7 @@ use GuzzleHttp\Client as GuzzleClient;
 final class Client
 {
     private static ?string $apiKey = null;
+    private static ?string $apiEndpoint = null;
     private static ?HttpClientInterface $httpClient = null;
 
     /**
@@ -30,6 +31,16 @@ final class Client
     {
         self::$apiKey = trim($apiKey);
         // Reset HTTP client so it picks up new API key
+        self::$httpClient = null;
+    }
+
+    /**
+     * Set a custom API endpoint URL.
+     */
+    public static function setApiEndpoint(string $endpoint): void
+    {
+        self::$apiEndpoint = rtrim(trim($endpoint), '/');
+        // Reset HTTP client so it picks up new endpoint
         self::$httpClient = null;
     }
 
@@ -66,6 +77,7 @@ final class Client
     public static function reset(): void
     {
         self::$apiKey = null;
+        self::$apiEndpoint = null;
         self::$httpClient = null;
     }
 
@@ -76,10 +88,12 @@ final class Client
                 throw new ApiException('API key not set. Call Client::setApiKey() first.');
             }
 
-            self::$httpClient = new HttpClient(
-                new GuzzleClient(),
-                self::$apiKey
-            );
+            $args = [new GuzzleClient(), self::$apiKey];
+            if (self::$apiEndpoint !== null && self::$apiEndpoint !== '') {
+                $args[] = self::$apiEndpoint;
+            }
+
+            self::$httpClient = new HttpClient(...$args);
         }
 
         return self::$httpClient;

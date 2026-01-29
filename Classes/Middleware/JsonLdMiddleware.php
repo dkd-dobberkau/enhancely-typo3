@@ -81,8 +81,9 @@ final class JsonLdMiddleware implements MiddlewareInterface
         $cachedJsonLd = $cachedData['jsonld'] ?? null;
 
         try {
-            // Set API key
+            // Configure client
             Client::setApiKey($this->configuration->getApiKey());
+            Client::setApiEndpoint($this->configuration->getApiEndpoint());
 
             // Request JSON-LD from Enhancely
             $enhancelyResponse = Client::jsonld(

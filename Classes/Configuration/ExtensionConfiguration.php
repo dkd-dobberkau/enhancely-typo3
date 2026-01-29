@@ -40,4 +40,10 @@ final class ExtensionConfiguration implements SingletonInterface
     {
         return (int)($this->configuration['cacheLifetime'] ?? 86400);
     }
+
+    public function getApiEndpoint(): string
+    {
+        $endpoint = trim((string)($this->configuration['apiEndpoint'] ?? ''));
+        return $endpoint !== '' ? rtrim($endpoint, '/') : 'https://api.enhancely.ai';
+    }
 }

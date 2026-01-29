@@ -14,13 +14,18 @@ use GuzzleHttp\RequestOptions;
  */
 final class HttpClient implements HttpClientInterface
 {
-    private const BASE_URL = 'https://api.enhancely.ai';
+    private const DEFAULT_BASE_URL = 'https://api.enhancely.ai';
     private const ENDPOINT_JSONLD = '/api/v1/jsonld';
+
+    private readonly string $baseUrl;
 
     public function __construct(
         private readonly GuzzleClient $guzzle,
         private readonly string $apiKey,
-    ) {}
+        string $baseUrl = self::DEFAULT_BASE_URL,
+    ) {
+        $this->baseUrl = rtrim($baseUrl, '/');
+    }
 
     /**
      * Request JSON-LD for a URL.
@@ -42,7 +47,7 @@ final class HttpClient implements HttpClientInterface
         }
 
         try {
-            $response = $this->guzzle->post(self::BASE_URL . self::ENDPOINT_JSONLD, [
+            $response = $this->guzzle->post($this->baseUrl . self::ENDPOINT_JSONLD, [
                 RequestOptions::HEADERS => $headers,
                 RequestOptions::JSON => ['url' => $url],
                 RequestOptions::HTTP_ERRORS => false,
