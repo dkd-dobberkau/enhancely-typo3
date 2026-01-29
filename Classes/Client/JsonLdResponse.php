@@ -21,12 +21,14 @@ final class JsonLdResponse
      * @param array<string, mixed>|null $data JSON-LD data from API
      * @param string|null $etag ETag for caching
      * @param string|null $errorMessage Error message if request failed
+     * @param array<string, mixed>|null $problemDetails RFC 7807 problem details
      */
     private function __construct(
         private readonly int $statusCode,
         private readonly ?array $data = null,
         private readonly ?string $etag = null,
         private readonly ?string $errorMessage = null,
+        private readonly ?array $problemDetails = null,
     ) {}
 
     /**
@@ -59,10 +61,13 @@ final class JsonLdResponse
 
     /**
      * Create error response.
+     *
+     * @param string $message Error message
+     * @param array<string, mixed>|null $problemDetails RFC 7807 problem details from API
      */
-    public static function createError(string $message): self
+    public static function createError(string $message, ?array $problemDetails = null): self
     {
-        return new self(0, null, null, $message);
+        return new self(0, null, null, $message, $problemDetails);
     }
 
     /**
@@ -98,6 +103,16 @@ final class JsonLdResponse
     public function error(): ?string
     {
         return $this->errorMessage;
+    }
+
+    /**
+     * Get RFC 7807 problem details from API error response.
+     *
+     * @return array<string, mixed>|null
+     */
+    public function problemDetails(): ?array
+    {
+        return $this->problemDetails;
     }
 
     /**

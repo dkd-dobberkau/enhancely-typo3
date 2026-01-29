@@ -83,7 +83,7 @@ final class JsonLdMiddleware implements MiddlewareInterface
         try {
             // Configure client
             Client::setApiKey($this->configuration->getApiKey());
-            Client::setApiEndpoint($this->configuration->getApiEndpoint());
+            Client::setApiBaseUrl($this->configuration->getApiBaseUrl());
 
             // Request JSON-LD from Enhancely
             $enhancelyResponse = Client::jsonld(
@@ -111,10 +111,14 @@ final class JsonLdMiddleware implements MiddlewareInterface
             } else {
                 // Not ready yet or error, skip injection
                 if ($enhancelyResponse->error()) {
-                    $this->logger->warning('Enhancely API error', [
+                    $logContext = [
                         'url' => $url,
                         'error' => $enhancelyResponse->error(),
-                    ]);
+                    ];
+                    if ($enhancelyResponse->problemDetails()) {
+                        $logContext['problemDetails'] = $enhancelyResponse->problemDetails();
+                    }
+                    $this->logger->warning('Enhancely API error', $logContext);
                 }
                 return $response;
             }

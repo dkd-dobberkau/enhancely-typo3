@@ -41,9 +41,10 @@ final class ExtensionConfiguration implements SingletonInterface
         return (int)($this->configuration['cacheLifetime'] ?? 86400);
     }
 
-    public function getApiEndpoint(): string
+    public function getApiBaseUrl(): string
     {
-        $endpoint = trim((string)($this->configuration['apiEndpoint'] ?? ''));
-        return $endpoint !== '' ? rtrim($endpoint, '/') : 'https://api.enhancely.ai';
+        // Check new config key first, fall back to deprecated 'apiEndpoint' for BC
+        $baseUrl = trim((string)($this->configuration['apiBaseUrl'] ?? $this->configuration['apiEndpoint'] ?? ''));
+        return $baseUrl !== '' ? rtrim($baseUrl, '/') : 'https://api.enhancely.ai';
     }
 }

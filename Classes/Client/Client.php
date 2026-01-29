@@ -21,7 +21,7 @@ use GuzzleHttp\Client as GuzzleClient;
 final class Client
 {
     private static ?string $apiKey = null;
-    private static ?string $apiEndpoint = null;
+    private static ?string $apiBaseUrl = null;
     private static ?HttpClientInterface $httpClient = null;
 
     /**
@@ -35,13 +35,21 @@ final class Client
     }
 
     /**
-     * Set a custom API endpoint URL.
+     * Set a custom API base URL (without /api/v1/jsonld path).
+     */
+    public static function setApiBaseUrl(string $baseUrl): void
+    {
+        self::$apiBaseUrl = rtrim(trim($baseUrl), '/');
+        // Reset HTTP client so it picks up new base URL
+        self::$httpClient = null;
+    }
+
+    /**
+     * @deprecated Use setApiBaseUrl() instead
      */
     public static function setApiEndpoint(string $endpoint): void
     {
-        self::$apiEndpoint = rtrim(trim($endpoint), '/');
-        // Reset HTTP client so it picks up new endpoint
-        self::$httpClient = null;
+        self::setApiBaseUrl($endpoint);
     }
 
     /**
@@ -57,7 +65,7 @@ final class Client
             $normalizedUrl = UrlNormalizer::normalize($url);
             return self::getHttpClient()->postJsonLd($normalizedUrl, $etag);
         } catch (ApiException $e) {
-            return JsonLdResponse::createError($e->getMessage());
+            return JsonLdResponse::createError($e->getMessage(), $e->getProblemDetails());
         } catch (\Throwable $e) {
             return JsonLdResponse::createError('Unexpected error: ' . $e->getMessage());
         }
@@ -77,7 +85,7 @@ final class Client
     public static function reset(): void
     {
         self::$apiKey = null;
-        self::$apiEndpoint = null;
+        self::$apiBaseUrl = null;
         self::$httpClient = null;
     }
 
@@ -89,8 +97,8 @@ final class Client
             }
 
             $args = [new GuzzleClient(), self::$apiKey];
-            if (self::$apiEndpoint !== null && self::$apiEndpoint !== '') {
-                $args[] = self::$apiEndpoint;
+            if (self::$apiBaseUrl !== null && self::$apiBaseUrl !== '') {
+                $args[] = self::$apiBaseUrl;
             }
 
             self::$httpClient = new HttpClient(...$args);
