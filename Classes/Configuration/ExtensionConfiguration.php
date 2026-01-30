@@ -44,7 +44,9 @@ final class ExtensionConfiguration implements SingletonInterface
     public function getApiBaseUrl(): string
     {
         // Check new config key first, fall back to deprecated 'apiEndpoint' for BC
-        $baseUrl = trim((string)($this->configuration['apiBaseUrl'] ?? $this->configuration['apiEndpoint'] ?? ''));
+        // Use ?: instead of ?? because empty string should also trigger fallback
+        $baseUrl = trim((string)($this->configuration['apiBaseUrl'] ?? ''))
+            ?: trim((string)($this->configuration['apiEndpoint'] ?? ''));
         return $baseUrl !== '' ? rtrim($baseUrl, '/') : 'https://api.enhancely.ai';
     }
 }
