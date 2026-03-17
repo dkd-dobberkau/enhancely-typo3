@@ -9,10 +9,7 @@ return [
         'enhancely/jsonld' => [
             'target' => JsonLdMiddleware::class,
             'after' => [
-                'typo3/cms-frontend/content-length-headers',
-            ],
-            'before' => [
-                'typo3/cms-frontend/output-compression',
+                'typo3/cms-frontend/prepare-tsfe-rendering',
             ],
         ],
     ],

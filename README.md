@@ -2,7 +2,7 @@
 
 AI-generated JSON-LD structured data for improved SEO and LLM visibility.
 
-[![TYPO3](https://img.shields.io/badge/TYPO3-12%20%7C%2013-orange.svg)](https://typo3.org/)
+[![TYPO3](https://img.shields.io/badge/TYPO3-12%20%7C%2013%20%7C%2014-orange.svg)](https://typo3.org/)
 [![PHP](https://img.shields.io/badge/PHP-8.2%2B-blue.svg)](https://php.net/)
 [![License](https://img.shields.io/badge/License-GPL--2.0--or--later-green.svg)](LICENSE)
 
@@ -12,11 +12,14 @@ Enhancely automatically generates Schema.org JSON-LD structured data for your we
 
 ## Installation
 
+### Composer (recommended)
+
 ```bash
 composer require enhancely/enhancely-for-typo3
+vendor/bin/typo3 database:updateschema
 ```
 
-Then activate the extension in the TYPO3 Extension Manager.
+In TYPO3 v12 (Classic Mode), activate the extension additionally via **Admin Tools > Extensions**.
 
 ## Configuration
 
@@ -28,7 +31,8 @@ Then activate the extension in the TYPO3 Extension Manager.
 |---------|-------------|---------|
 | API Key | Your Enhancely API key from [enhancely.ai](https://enhancely.ai) | - |
 | Enabled | Enable/disable JSON-LD generation | true |
-| Excluded Page Types | Comma-separated doktypes to skip (e.g., `254,199`) | - |
+| API Base URL | Base URL without path (leave empty for default) | `https://api.enhancely.ai` |
+| Excluded Page Types | Comma-separated doktypes to skip (e.g., `404,403`) | - |
 | Cache Lifetime | Cache duration in seconds | 86400 (24h) |
 
 ## How It Works
@@ -61,7 +65,7 @@ Request → Middleware → Enhancely API → JSON-LD injected in <head>
 
 ## Requirements
 
-- TYPO3 12.4+ or 13.x
+- TYPO3 12.4+, 13.x or 14.x
 - PHP 8.2+
 - Enhancely API key
 
