@@ -15,7 +15,21 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Check TER credentials
+        id: creds
+        env:
+          TER_TOKEN: ${{ secrets.TYPO3_API_TOKEN }}
+          TER_USER: ${{ secrets.TYPO3_API_USERNAME }}
+        run: |
+          if [ -z "$TER_TOKEN" ] || [ -z "$TER_USER" ]; then
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::TER credentials not set — skipping TER upload. Customer publishes manually via typo3/tailor."
+          else
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Resolve TYPO3 extension key
+        if: steps.creds.outputs.configured == 'true'
         id: key
         run: |
           KEY=$(php -r "\$c=json_decode(file_get_contents('composer.json'),true);echo \$c['extra']['typo3/cms']['extension-key']??'';")
@@ -24,6 +38,7 @@ jobs:
 
       - name: Build release notes from git log
         id: notes
+        if: steps.creds.outputs.configured == 'true'
         run: |
           PREV=$(git describe --tags --abbrev=0 "${{ github.ref_name }}^" 2>/dev/null || echo "")
           if [ -n "$PREV" ]; then
@@ -40,6 +55,7 @@ jobs:
           } >> "$GITHUB_OUTPUT"
 
       - name: Upload to TER
+        if: steps.creds.outputs.configured == 'true'
         uses: tomasnorre/typo3-upload-ter@v2
         with:
           api-token: ${{ secrets.TYPO3_API_TOKEN }}

@@ -9,22 +9,50 @@ is published to:
    (TYPO3 Extension Repository)
 3. [GitHub Releases](https://github.com/dkd-dobberkau/enhancely-typo3/releases)
 
-## Prerequisites (one-time)
+## TER publishing — two paths
 
-### TER credentials
+The Composer/Packagist + GitHub Release flow is fully automated. The TER
+upload has **two paths**; pick whichever fits the credential ownership:
 
-The TER upload happens via the
-[`tomasnorre/typo3-upload-ter`](https://github.com/tomasnorre/typo3-upload-ter)
-GitHub Action (which uses `typo3/tailor` under the hood). It needs two GitHub
-Actions secrets in this repository:
+### Path A — Automated via GitHub Action (token in repo secrets)
+
+Used when the TER token can live in this repository's secrets.
 
 | Secret name             | Source                                                                              |
 |-------------------------|-------------------------------------------------------------------------------------|
 | `TYPO3_API_USERNAME`    | typo3.org login of an account that owns the extension key `enhancely`               |
-| `TYPO3_API_TOKEN`       | Created at <https://extensions.typo3.org/> → *My Account → Access Tokens → Create*  |
+| `TYPO3_API_TOKEN`       | <https://extensions.typo3.org/> → *My Account → Access Tokens → Create* (scopes: `extension:read,extension:write`) |
 
-Set them at:
-**Repo → Settings → Secrets and variables → Actions → New repository secret**
+Set at: **Repo → Settings → Secrets and variables → Actions → New repository secret**.
+
+When both secrets are present, `.github/workflows/publish-ter.yml` runs on
+every semver tag push and uploads automatically. When they are absent, the
+workflow skips the upload step gracefully (no red X).
+
+### Path B — Manual upload by the token owner (current setup)
+
+Used when the TER token stays with the customer / extension-key owner. After
+we push the git tag, the customer runs:
+
+```bash
+# Once: install Tailor globally
+composer global require typo3/tailor
+
+# Per release:
+git clone https://github.com/dkd-dobberkau/enhancely-typo3.git
+cd enhancely-typo3
+git checkout 1.2.3                                # or whatever was just tagged
+
+export TYPO3_API_USERNAME='<typo3.org-username>'
+export TYPO3_API_TOKEN='<token-from-extensions.typo3.org>'
+
+~/.composer/vendor/bin/tailor ter:publish \
+  --comment "Security release: XSS hardening, HTTPS enforcement, response size limit" \
+  1.2.3
+```
+
+The tag and the source on GitHub are immutable, so the customer can run this
+at any time after the tag has been pushed — there is no race window.
 
 ### Packagist
 
