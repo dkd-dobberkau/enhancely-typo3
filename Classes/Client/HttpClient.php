@@ -16,6 +16,7 @@ final class HttpClient implements HttpClientInterface
 {
     private const DEFAULT_BASE_URL = 'https://api.enhancely.ai';
     private const ENDPOINT_JSONLD = '/api/v1/jsonld';
+    private const MAX_RESPONSE_BYTES = 1048576; // 1 MiB
 
     private readonly string $baseUrl;
 
@@ -87,7 +88,7 @@ final class HttpClient implements HttpClientInterface
         \Psr\Http\Message\ResponseInterface $response,
         ?string $etag
     ): JsonLdResponse {
-        $body = (string)$response->getBody();
+        $body = $this->readBoundedBody($response);
         $data = json_decode($body, true);
 
         if (!is_array($data)) {
@@ -95,6 +96,38 @@ final class HttpClient implements HttpClientInterface
         }
 
         return JsonLdResponse::fromApiResponse(200, $data, $etag);
+    }
+
+    /**
+     * Read the response body up to MAX_RESPONSE_BYTES.
+     *
+     * Throws if Content-Length advertises more, or if the actual stream
+     * exceeds the cap. Prevents OOM on a malicious or compromised endpoint.
+     */
+    private function readBoundedBody(\Psr\Http\Message\ResponseInterface $response): string
+    {
+        $contentLength = $response->getHeaderLine('Content-Length');
+        if ($contentLength !== '' && (int)$contentLength > self::MAX_RESPONSE_BYTES) {
+            throw new ApiException('Response too large', $response->getStatusCode());
+        }
+
+        $stream = $response->getBody();
+        $body = '';
+        $remaining = self::MAX_RESPONSE_BYTES;
+        while ($remaining > 0 && !$stream->eof()) {
+            $chunk = $stream->read(min(8192, $remaining));
+            if ($chunk === '') {
+                break;
+            }
+            $body .= $chunk;
+            $remaining -= strlen($chunk);
+        }
+
+        if (!$stream->eof()) {
+            throw new ApiException('Response too large', $response->getStatusCode());
+        }
+
+        return $body;
     }
 
     /**

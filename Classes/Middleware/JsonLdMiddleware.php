@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace Enhancely\Enhancely\Middleware;
 
-use Enhancely\Enhancely\Client\Client;
+use Enhancely\Enhancely\Client\Exception\ApiException;
+use Enhancely\Enhancely\Client\HttpClientFactory;
+use Enhancely\Enhancely\Client\JsonLdResponse;
+use Enhancely\Enhancely\Client\UrlNormalizer;
 use Enhancely\Enhancely\Configuration\ExtensionConfiguration;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
@@ -19,6 +22,7 @@ final class JsonLdMiddleware implements MiddlewareInterface
 {
     public function __construct(
         private readonly ExtensionConfiguration $configuration,
+        private readonly HttpClientFactory $httpClientFactory,
         private readonly FrontendInterface $cache,
         private readonly LoggerInterface $logger,
         private readonly StreamFactory $streamFactory,
@@ -81,15 +85,14 @@ final class JsonLdMiddleware implements MiddlewareInterface
         $cachedJsonLd = $cachedData['jsonld'] ?? null;
 
         try {
-            // Configure client
-            Client::setApiKey($this->configuration->getApiKey());
-            Client::setApiBaseUrl($this->configuration->getApiBaseUrl());
+            $client = $this->httpClientFactory->create();
+            $normalizedUrl = UrlNormalizer::normalize($url);
 
-            // Request JSON-LD from Enhancely
-            $enhancelyResponse = Client::jsonld(
-                url: $url,
-                etag: $cachedEtag
-            );
+            try {
+                $enhancelyResponse = $client->postJsonLd($normalizedUrl, $cachedEtag);
+            } catch (ApiException $e) {
+                $enhancelyResponse = JsonLdResponse::createError($e->getMessage(), $e->getProblemDetails());
+            }
 
             if ($enhancelyResponse->notModified() && $cachedJsonLd !== null) {
                 // Content unchanged, use cached JSON-LD
@@ -141,7 +144,10 @@ final class JsonLdMiddleware implements MiddlewareInterface
 
     private function getCacheIdentifier(string $url): string
     {
-        return 'enhancely_' . md5($url);
+        // Cache key must match the URL we send to the API; otherwise queries
+        // like ?utm_source=… create endless cache fragmentation while the API
+        // returns the same JSON-LD for the normalized URL.
+        return 'enhancely_' . md5(UrlNormalizer::normalize($url));
     }
 
     private function insertBeforeHeadClose(string $html, string $jsonLd): string

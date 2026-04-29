@@ -69,6 +69,19 @@ Request → Middleware → Enhancely API → JSON-LD injected in <head>
 - PHP 8.2+
 - Enhancely API key
 
+## Security
+
+- The middleware reads the request URI (including the `Host` header) and sends the
+  normalized URL to the Enhancely API. Make sure
+  `$GLOBALS['TYPO3_CONF_VARS']['SYS']['trustedHostsPattern']` is configured to
+  prevent host-header injection / cache pollution.
+- The configured **API Base URL** must use `https://`. Non-HTTPS values are
+  silently rejected and the default endpoint is used instead, so the API key
+  (sent as Bearer token) is never transmitted in cleartext.
+- API responses are capped at 1 MiB to prevent memory exhaustion.
+- JSON-LD payloads are emitted with `JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT`,
+  so embedded HTML cannot break out of the surrounding `<script type="application/ld+json">` tag.
+
 ## Development
 
 ```bash

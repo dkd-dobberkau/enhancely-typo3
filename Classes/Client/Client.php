@@ -96,7 +96,9 @@ final class Client
                 throw new ApiException('API key not set. Call Client::setApiKey() first.');
             }
 
-            $args = [new GuzzleClient(), self::$apiKey];
+            // Explicit verify=true so a global Guzzle config override
+            // cannot accidentally disable TLS verification for our requests.
+            $args = [new GuzzleClient(['verify' => true]), self::$apiKey];
             if (self::$apiBaseUrl !== null && self::$apiBaseUrl !== '') {
                 $args[] = self::$apiBaseUrl;
             }

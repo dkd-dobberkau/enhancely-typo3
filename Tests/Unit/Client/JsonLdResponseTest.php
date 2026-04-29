@@ -126,4 +126,56 @@ final class JsonLdResponseTest extends TestCase
 
         self::assertNull($response->jsonld());
     }
+
+    #[Test]
+    public function toStringEscapesScriptBreakoutAttempts(): void
+    {
+        $data = [
+            'jsonld' => [
+                '@context' => 'https://schema.org',
+                '@type' => 'WebPage',
+                'description' => '</script><img src=x onerror=alert(1)>',
+            ],
+        ];
+
+        $response = JsonLdResponse::fromApiResponse(200, $data, null);
+        $output = (string)$response;
+
+        // Exactly one closing </script> (the wrapper), payload must not break out
+        self::assertSame(1, substr_count($output, '</script>'));
+        // No raw '<' or '>' from the payload — both must be < / >
+        $payloadStart = strpos($output, '"description"');
+        self::assertNotFalse($payloadStart);
+        $payload = substr($output, (int)$payloadStart, strpos($output, '</script>') - (int)$payloadStart);
+        self::assertStringNotContainsString('<', $payload);
+        self::assertStringNotContainsString('>', $payload);
+        self::assertStringContainsString('<', $output);
+        self::assertStringContainsString('>', $output);
+    }
+
+    #[Test]
+    public function toStringEscapesAmpersandsAndQuotes(): void
+    {
+        $data = [
+            'jsonld' => [
+                '@context' => 'https://schema.org',
+                '@type' => 'WebPage',
+                'name' => 'Tom & Jerry "quoted" \'apos\'',
+            ],
+        ];
+
+        $response = JsonLdResponse::fromApiResponse(200, $data, null);
+        $output = (string)$response;
+
+        // Within the JSON payload, &, ', and embedded " must be hex-escaped
+        $payloadStart = (int)strpos($output, '"name"');
+        $payloadEnd = (int)strpos($output, '</script>');
+        $payload = substr($output, $payloadStart, $payloadEnd - $payloadStart);
+
+        self::assertStringNotContainsString('&', $payload);
+        self::assertStringNotContainsString("'", $payload);
+        self::assertStringContainsString('\\u0026', $payload);
+        self::assertStringContainsString('\\u0027', $payload);
+        self::assertStringContainsString('\\u0022', $payload);
+    }
 }

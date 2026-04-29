@@ -144,7 +144,18 @@ final class JsonLdResponse
             return '';
         }
 
-        $encoded = json_encode($jsonld, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+        // JSON_HEX_TAG/AMP/APOS/QUOT prevent breakout from the surrounding
+        // <script type="application/ld+json"> tag if the payload contains
+        // strings like "</script>" or other HTML-significant characters.
+        $encoded = json_encode(
+            $jsonld,
+            JSON_UNESCAPED_SLASHES
+            | JSON_UNESCAPED_UNICODE
+            | JSON_HEX_TAG
+            | JSON_HEX_AMP
+            | JSON_HEX_APOS
+            | JSON_HEX_QUOT
+        );
 
         if ($encoded === false) {
             return '';

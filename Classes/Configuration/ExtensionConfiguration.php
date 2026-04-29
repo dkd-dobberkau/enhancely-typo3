@@ -9,6 +9,9 @@ use TYPO3\CMS\Core\SingletonInterface;
 
 final class ExtensionConfiguration implements SingletonInterface
 {
+    private const DEFAULT_API_BASE_URL = 'https://api.enhancely.ai';
+    private const DEFAULT_CACHE_LIFETIME = 86400;
+
     private array $configuration;
 
     public function __construct(
@@ -38,7 +41,10 @@ final class ExtensionConfiguration implements SingletonInterface
 
     public function getCacheLifetime(): int
     {
-        return (int)($this->configuration['cacheLifetime'] ?? 86400);
+        $lifetime = (int)($this->configuration['cacheLifetime'] ?? self::DEFAULT_CACHE_LIFETIME);
+        // Reject non-positive values; the API key is sent on every request,
+        // a 0/negative TTL would cause cache thrashing.
+        return $lifetime > 0 ? $lifetime : self::DEFAULT_CACHE_LIFETIME;
     }
 
     public function getApiBaseUrl(): string
@@ -47,6 +53,17 @@ final class ExtensionConfiguration implements SingletonInterface
         // Use ?: instead of ?? because empty string should also trigger fallback
         $baseUrl = trim((string)($this->configuration['apiBaseUrl'] ?? ''))
             ?: trim((string)($this->configuration['apiEndpoint'] ?? ''));
-        return $baseUrl !== '' ? rtrim($baseUrl, '/') : 'https://api.enhancely.ai';
+
+        if ($baseUrl === '') {
+            return self::DEFAULT_API_BASE_URL;
+        }
+
+        // Enforce HTTPS: the API key is sent as a Bearer token. A non-https
+        // base URL would expose the token over the wire.
+        if (!str_starts_with(strtolower($baseUrl), 'https://')) {
+            return self::DEFAULT_API_BASE_URL;
+        }
+
+        return rtrim($baseUrl, '/');
     }
 }

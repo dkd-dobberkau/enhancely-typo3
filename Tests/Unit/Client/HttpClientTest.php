@@ -140,4 +140,38 @@ final class HttpClientTest extends TestCase
 
         $client->postJsonLd('https://example.com/page');
     }
+
+    #[Test]
+    public function postJsonLdRejectsResponseExceedingSizeLimit(): void
+    {
+        // Construct a body larger than the 1 MiB limit
+        $oversized = str_repeat('a', 1024 * 1024 + 1);
+        $body = json_encode(['jsonld' => ['@type' => 'WebPage', 'name' => $oversized]]);
+
+        $client = $this->createHttpClient([
+            new Response(200, ['Content-Length' => (string)strlen($body)], $body),
+        ]);
+
+        $this->expectException(ApiException::class);
+        $this->expectExceptionMessage('Response too large');
+
+        $client->postJsonLd('https://example.com/page');
+    }
+
+    #[Test]
+    public function postJsonLdRejectsResponseExceedingSizeLimitWithoutContentLength(): void
+    {
+        // Server omits Content-Length; client must still cap the read.
+        $oversized = str_repeat('a', 1024 * 1024 + 1);
+        $body = json_encode(['jsonld' => ['@type' => 'WebPage', 'name' => $oversized]]);
+
+        $client = $this->createHttpClient([
+            new Response(200, [], $body),
+        ]);
+
+        $this->expectException(ApiException::class);
+        $this->expectExceptionMessage('Response too large');
+
+        $client->postJsonLd('https://example.com/page');
+    }
 }
