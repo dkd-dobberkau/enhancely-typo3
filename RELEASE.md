@@ -1,3 +1,22 @@
+## 1.3.0 — 2026-05-18
+
+### Added
+- Backend Info-module tab "Enhancely JSON-LD" showing per-page status, sanity checks, and raw payload.
+- `JsonLdResponse::crawledAt()`, `apiStatus()`, `hash()` accessors.
+- `Enhancely\Enhancely\Backend\SanityCheck\SanityChecker` with four checks: BreadcrumbList absolute, title mismatch, crawl freshness, payload size.
+- `Enhancely\Enhancely\Configuration\ExtensionConfigurationInterface` and `Enhancely\Enhancely\Backend\InfoModule\UrlResolverInterface` / `JsonLdFetcherInterface` to enable mocking of `final` classes in unit tests.
+
+### Changed
+- The `enhancely_etag` cache payload now carries an additional `meta` block (`crawled_at`, `status`, `hash`, parsed graph, `cached_at`). The existing `etag` and `jsonld` keys are unchanged. Cache entries written by older versions remain readable by the FE middleware and are treated as a miss by the BE tab.
+
+### Dev
+- Added `typo3/cms-backend`, `typo3/cms-fluid`, `dg/bypass-finals` to `require-dev` (test-only, no production deps changed).
+
+### Compatibility
+- TYPO3 12.4 – 14.99, PHP 8.2+ (unchanged).
+
+---
+
 # Release Process
 
 This document describes how a new version of the **enhancely** TYPO3 extension

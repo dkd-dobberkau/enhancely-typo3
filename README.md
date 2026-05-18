@@ -55,6 +55,28 @@ Request → Middleware → Enhancely API → JSON-LD injected in <head>
 - **Graceful Degradation**: Page renders normally if API fails
 - **URL Normalization**: Strips query params and fragments for consistent caching
 
+## Backend integration
+
+The extension ships a read-only Info-module tab that shows the Enhancely status for the currently selected page.
+
+1. In the TYPO3 backend, open **Web › Info**.
+2. Pick **Enhancely JSON-LD** from the function dropdown.
+3. The tab shows:
+   - Current Enhancely status (ready / processing / error / skipped)
+   - Last crawl timestamp, ETag, hash
+   - Sanity checks (BreadcrumbList absolute, title mismatch, crawl freshness, payload size)
+   - The raw JSON-LD payload
+
+A **Refresh** button re-fetches from Enhancely and invalidates the shared cache for that URL. The tab does not trigger a server-side re-crawl on Enhancely — that endpoint is not exposed to customers.
+
+### Manual smoke test (for contributors)
+
+1. Install into a TYPO3 instance with the extension's API key configured.
+2. Open a page in the BE with known Enhancely data → expect green "ready" badge.
+3. Press Refresh → expect `Source: live (fresh)` and an updated cached_at line.
+4. Set an excluded doktype matching the page → expect gray "skipped".
+5. Blank the API key → expect amber "not configured" banner.
+
 ## API Response Handling
 
 | Status | Meaning | Action |
