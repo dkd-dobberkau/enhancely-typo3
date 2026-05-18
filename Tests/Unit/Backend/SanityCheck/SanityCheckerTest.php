@@ -77,4 +77,51 @@ final class SanityCheckerTest extends TestCase
 
         self::assertSame('pass', $r->level);
     }
+
+    #[Test]
+    public function titleMismatchPassesWhenWebsiteNameMatches(): void
+    {
+        $jsonLd = [
+            '@graph' => [
+                ['@type' => 'WebSite', 'name' => 'Example Site'],
+                ['@type' => 'Organization', 'name' => 'Example Site'],
+            ],
+        ];
+
+        $checker = new SanityChecker();
+        $results = $checker->check($jsonLd, [], 'Example Site');
+        $r = $this->findResult($results, 'title_mismatch');
+
+        self::assertSame('pass', $r->level);
+    }
+
+    #[Test]
+    public function titleMismatchWarnsWhenWebsiteNameDiffers(): void
+    {
+        $jsonLd = [
+            '@graph' => [
+                ['@type' => 'WebSite', 'name' => 'Old Name'],
+            ],
+        ];
+
+        $checker = new SanityChecker();
+        $results = $checker->check($jsonLd, [], 'Example Site');
+        $r = $this->findResult($results, 'title_mismatch');
+
+        self::assertSame('warn', $r->level);
+        self::assertStringContainsString('Old Name', $r->message);
+        self::assertStringContainsString('Example Site', $r->message);
+    }
+
+    #[Test]
+    public function titleMismatchPassesWhenExpectedTitleIsEmpty(): void
+    {
+        $jsonLd = ['@graph' => [['@type' => 'WebSite', 'name' => 'Anything']]];
+
+        $checker = new SanityChecker();
+        $results = $checker->check($jsonLd, [], '');
+        $r = $this->findResult($results, 'title_mismatch');
+
+        self::assertSame('pass', $r->level);
+    }
 }

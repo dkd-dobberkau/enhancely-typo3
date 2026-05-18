@@ -16,6 +16,7 @@ final class SanityChecker
     {
         return [
             $this->checkBreadcrumbAbsolute($jsonLd),
+            $this->checkTitleMismatch($jsonLd, $expectedWebsiteTitle),
         ];
     }
 
@@ -47,6 +48,47 @@ final class SanityChecker
                 'BreadcrumbList contains %d relative URL(s): %s',
                 count($relative),
                 implode(', ', array_slice($relative, 0, 3))
+            )
+        );
+    }
+
+    private function checkTitleMismatch(array $jsonLd, string $expected): CheckResult
+    {
+        if ($expected === '') {
+            return CheckResult::pass(
+                'title_mismatch',
+                'No websiteTitle configured — skipping check'
+            );
+        }
+
+        $mismatches = [];
+        foreach (['WebSite', 'Organization'] as $type) {
+            foreach ($this->findNodesByType($jsonLd, $type) as $node) {
+                $name = (string)($node['name'] ?? '');
+                if ($name !== '' && $name !== $expected) {
+                    $mismatches[$type] = $name;
+                }
+            }
+        }
+
+        if ($mismatches === []) {
+            return CheckResult::pass(
+                'title_mismatch',
+                'Site name matches configured websiteTitle'
+            );
+        }
+
+        $pairs = [];
+        foreach ($mismatches as $type => $found) {
+            $pairs[] = sprintf('%s.name="%s"', $type, $found);
+        }
+
+        return CheckResult::warn(
+            'title_mismatch',
+            sprintf(
+                'Site name mismatch: %s; expected "%s" (Enhancely may hold a pre-rename crawl)',
+                implode(', ', $pairs),
+                $expected
             )
         );
     }
