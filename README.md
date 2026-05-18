@@ -2,7 +2,7 @@
 
 AI-generated JSON-LD structured data for improved SEO and LLM visibility.
 
-[![TYPO3](https://img.shields.io/badge/TYPO3-12%20%7C%2013%20%7C%2014-orange.svg)](https://typo3.org/)
+[![TYPO3](https://img.shields.io/badge/TYPO3-13%20%7C%2014-orange.svg)](https://typo3.org/)
 [![PHP](https://img.shields.io/badge/PHP-8.2%2B-blue.svg)](https://php.net/)
 [![License](https://img.shields.io/badge/License-GPL--2.0--or--later-green.svg)](LICENSE)
 

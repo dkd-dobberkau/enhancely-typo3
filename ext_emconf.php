@@ -7,10 +7,10 @@ $EM_CONF[$_EXTKEY] = [
     'author' => 'Enhancely',
     'author_email' => 'info@enhancely.ai',
     'state' => 'stable',
-    'version' => '1.3.1',
+    'version' => '1.4.0',
     'constraints' => [
         'depends' => [
-            'typo3' => '12.4.0-14.99.99',
+            'typo3' => '13.0.0-14.99.99',
         ],
         'conflicts' => [],
         'suggests' => [],

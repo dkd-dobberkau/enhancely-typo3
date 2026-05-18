@@ -1,3 +1,16 @@
+## 1.4.0 — 2026-05-18
+
+### Breaking
+- **Drops TYPO3 v12 support.** Minimum supported TYPO3 version is now 13.0. The backend status tab (introduced in 1.3.0) relies on `\TYPO3\CMS\Backend\Template\ModuleTemplate::renderResponse()` and the v13+ `BackendViewFactory`, neither of which exist in v12. Users on TYPO3 v12 must stay on 1.2.3.
+
+### Fixed
+- TYPO3 v14 compatibility: replaced `\TYPO3\CMS\Fluid\View\StandaloneView` usage in the backend controller (the class is removed in v14) with `ModuleTemplate::renderResponse()`. Removed the unused `<f:layout name="Module"/>` and `<f:section>` wrapper from `Show.html` — `ModuleTemplate` provides the BE chrome directly.
+
+### Changed
+- Promoted `typo3/cms-backend`, `typo3/cms-fluid`, `typo3/cms-frontend` from `require-dev` to `require` — they are runtime dependencies of the FE middleware and the BE module. Composer installs on a real TYPO3 site already provide them transitively, but declaring them explicitly is correct.
+
+---
+
 ## 1.3.1 — 2026-05-18
 
 ### Fixed
