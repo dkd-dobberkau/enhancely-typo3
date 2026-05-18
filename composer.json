@@ -25,7 +25,10 @@
         }
     },
     "require-dev": {
-        "phpunit/phpunit": "^10.5 || ^11.0"
+        "phpunit/phpunit": "^10.5 || ^11.0",
+        "typo3/cms-backend": "^12.4 || ^13.0 || ^14.0",
+        "typo3/cms-fluid": "^12.4 || ^13.0 || ^14.0",
+        "dg/bypass-finals": "^1.9"
     },
     "scripts": {
         "test": "phpunit"

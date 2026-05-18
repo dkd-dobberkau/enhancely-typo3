@@ -178,4 +178,47 @@ final class JsonLdResponseTest extends TestCase
         self::assertStringContainsString('\\u0027', $payload);
         self::assertStringContainsString('\\u0022', $payload);
     }
+
+    #[Test]
+    public function crawledAtReturnsTimestampFromApiResponse(): void
+    {
+        $response = JsonLdResponse::fromApiResponse(200, [
+            'jsonld' => ['@type' => 'WebPage'],
+            'crawled_at' => '2026-05-18T12:32:15.410Z',
+        ], 'etag-abc');
+
+        self::assertSame('2026-05-18T12:32:15.410Z', $response->crawledAt());
+    }
+
+    #[Test]
+    public function apiStatusReturnsStatusFromApiResponse(): void
+    {
+        $response = JsonLdResponse::fromApiResponse(200, [
+            'jsonld' => ['@type' => 'WebPage'],
+            'status' => 'ready',
+        ]);
+
+        self::assertSame('ready', $response->apiStatus());
+    }
+
+    #[Test]
+    public function hashReturnsHashFromApiResponse(): void
+    {
+        $response = JsonLdResponse::fromApiResponse(200, [
+            'jsonld' => ['@type' => 'WebPage'],
+            'hash' => '148a0a50e1812e0f604e17da47f0c4da',
+        ]);
+
+        self::assertSame('148a0a50e1812e0f604e17da47f0c4da', $response->hash());
+    }
+
+    #[Test]
+    public function accessorsReturnNullForMissingFields(): void
+    {
+        $response = JsonLdResponse::createError('boom');
+
+        self::assertNull($response->crawledAt());
+        self::assertNull($response->apiStatus());
+        self::assertNull($response->hash());
+    }
 }
