@@ -124,4 +124,35 @@ final class SanityCheckerTest extends TestCase
 
         self::assertSame('pass', $r->level);
     }
+
+    #[Test]
+    public function crawlFreshnessPassesWhenCrawledRecently(): void
+    {
+        $apiMeta = ['crawled_at' => gmdate('Y-m-d\TH:i:s\Z', time() - 3600)];
+
+        $results = (new SanityChecker())->check([], $apiMeta, '');
+        $r = $this->findResult($results, 'crawl_freshness');
+
+        self::assertSame('pass', $r->level);
+    }
+
+    #[Test]
+    public function crawlFreshnessWarnsWhenCrawledMoreThanSevenDaysAgo(): void
+    {
+        $apiMeta = ['crawled_at' => gmdate('Y-m-d\TH:i:s\Z', time() - 8 * 86400)];
+
+        $results = (new SanityChecker())->check([], $apiMeta, '');
+        $r = $this->findResult($results, 'crawl_freshness');
+
+        self::assertSame('warn', $r->level);
+    }
+
+    #[Test]
+    public function crawlFreshnessPassesWhenCrawledAtMissing(): void
+    {
+        $results = (new SanityChecker())->check([], [], '');
+        $r = $this->findResult($results, 'crawl_freshness');
+
+        self::assertSame('pass', $r->level);
+    }
 }

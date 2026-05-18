@@ -17,6 +17,7 @@ final class SanityChecker
         return [
             $this->checkBreadcrumbAbsolute($jsonLd),
             $this->checkTitleMismatch($jsonLd, $expectedWebsiteTitle),
+            $this->checkCrawlFreshness($apiMeta),
         ];
     }
 
@@ -90,6 +91,40 @@ final class SanityChecker
                 implode(', ', $pairs),
                 $expected
             )
+        );
+    }
+
+    private function checkCrawlFreshness(array $apiMeta): CheckResult
+    {
+        $crawledAt = (string)($apiMeta['crawled_at'] ?? '');
+        if ($crawledAt === '') {
+            return CheckResult::pass(
+                'crawl_freshness',
+                'No crawl timestamp available — skipping check'
+            );
+        }
+
+        $ts = strtotime($crawledAt);
+        if ($ts === false) {
+            return CheckResult::pass(
+                'crawl_freshness',
+                'Crawl timestamp unparseable — skipping check'
+            );
+        }
+
+        $ageSeconds = time() - $ts;
+        $sevenDays = 7 * 86400;
+
+        if ($ageSeconds <= $sevenDays) {
+            return CheckResult::pass(
+                'crawl_freshness',
+                sprintf('Crawled %d hours ago (threshold 7 days)', max(0, (int)($ageSeconds / 3600)))
+            );
+        }
+
+        return CheckResult::warn(
+            'crawl_freshness',
+            sprintf('Last crawl is %d days old (threshold 7 days)', (int)($ageSeconds / 86400))
         );
     }
 
