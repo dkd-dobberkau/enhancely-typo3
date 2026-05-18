@@ -170,4 +170,30 @@ final class EnhancelyStatusControllerTest extends TestCase
         self::assertSame('h2', $state->hash);
         self::assertStringContainsString('live', $state->source);
     }
+
+    #[Test]
+    public function forceRefreshSkipsCacheAndFetches(): void
+    {
+        $cache = $this->createMock(FrontendInterface::class);
+        // Cache has data but forceRefresh should bypass it.
+        $cache->expects(self::once())->method('remove')->with(self::isType('string'));
+
+        $response = \Enhancely\Enhancely\Client\JsonLdResponse::fromApiResponse(200, [
+            'jsonld' => ['@graph' => []],
+            'status' => 'ready',
+        ], 'etag-fresh');
+
+        $fetcher = $this->createMock(\Enhancely\Enhancely\Backend\InfoModule\JsonLdFetcherInterface::class);
+        $fetcher->expects(self::once())->method('fetch')->with(self::anything(), true)->willReturn($response);
+
+        $controller = new EnhancelyStatusController(
+            $this->configMock(),
+            $cache,
+            new SanityChecker(),
+            $this->urlResolverMock(),
+            $fetcher,
+        );
+
+        $controller->buildViewState(1, 0, 1, forceRefresh: true);
+    }
 }

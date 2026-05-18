@@ -56,6 +56,11 @@ final class EnhancelyStatusController
 
         $expectedTitle = $this->urlResolver->expectedWebsiteTitle($pageUid);
         $cacheId = $this->cacheIdentifier($url);
+
+        if ($forceRefresh) {
+            $this->cache->remove($cacheId);
+        }
+
         $cached = $this->cache->get($cacheId);
 
         if (is_array($cached) && isset($cached['meta']) && !$forceRefresh) {
