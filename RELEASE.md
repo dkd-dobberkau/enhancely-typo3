@@ -1,3 +1,10 @@
+## 1.3.1 — 2026-05-18
+
+### Fixed
+- TYPO3 14 compatibility: replaced `IconRegistry::class` registration in `ext_localconf.php` (now throws a `RuntimeException (1729784545)` on TYPO3 14) with a `Configuration/Icons.php` provider, which is the supported mechanism on TYPO3 12, 13, and 14.
+
+---
+
 ## 1.3.0 — 2026-05-18
 
 ### Added
