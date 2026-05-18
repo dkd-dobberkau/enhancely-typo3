@@ -21,6 +21,10 @@
       <trans-unit id="meta.graphtypes"><source>Graph nodes</source></trans-unit>
       <trans-unit id="sanity.heading"><source>Sanity checks</source></trans-unit>
       <trans-unit id="raw.heading"><source>Raw JSON-LD</source></trans-unit>
+      <trans-unit id="raw.copy"><source>Copy JSON-LD</source></trans-unit>
+      <trans-unit id="raw.copied"><source>Copied!</source></trans-unit>
+      <trans-unit id="raw.validate_schema"><source>Validate on schema.org</source></trans-unit>
+      <trans-unit id="raw.validate_google"><source>Google Rich Results Test</source></trans-unit>
       <trans-unit id="refresh"><source>Re-fetch from Enhancely</source></trans-unit>
       <trans-unit id="refresh.help"><source>Clears the local TYPO3 cache entry for this URL and re-requests JSON-LD from Enhancely. Enhancely's stored data only refreshes on its own nightly crawl — this button does NOT trigger a server-side re-crawl. Contact Enhancely support for an on-demand re-crawl.</source></trans-unit>
     </body>

@@ -1,3 +1,12 @@
+## 1.4.7 — 2026-05-18
+
+### Added
+- Copy-to-clipboard button below the raw JSON-LD viewer (uses the modern `navigator.clipboard` API with a `document.execCommand` fallback for older browsers). Visual confirmation via a temporary "Copied!" label.
+- "Validate on schema.org" link button — opens `validator.schema.org` pre-filled with the page URL in a new tab.
+- "Google Rich Results Test" link button — opens Google's Rich Results validator pre-filled with the page URL.
+
+---
+
 ## 1.4.6 — 2026-05-18
 
 ### Changed

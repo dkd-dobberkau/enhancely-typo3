@@ -2,6 +2,10 @@
 
 <f:layout name="Module"/>
 
+<f:section name="Before">
+  <f:asset.script identifier="enhancely-copy-jsonld" src="EXT:enhancely/Resources/Public/JavaScript/CopyJsonLd.js"/>
+</f:section>
+
 <f:section name="Content">
 
 <h1><f:translate key="LLL:EXT:enhancely/Resources/Private/Language/locallang_mod.xlf:title"/></h1>
@@ -109,7 +113,26 @@
 
         <f:if condition="{state.rawJsonLd}">
           <h2 class="h4 mt-4"><f:translate key="LLL:EXT:enhancely/Resources/Private/Language/locallang_mod.xlf:raw.heading"/></h2>
-          <pre class="enhancely-raw">{state.rawJsonLdPretty -> f:format.htmlspecialchars()}</pre>
+          <pre class="enhancely-raw" id="enhancely-rawjsonld">{state.rawJsonLdPretty -> f:format.htmlspecialchars()}</pre>
+          <div class="d-flex gap-2 flex-wrap mb-3">
+            <button type="button" class="btn btn-default btn-sm"
+                    data-enhancely-copy="enhancely-rawjsonld"
+                    data-copied-label="{f:translate(key:'LLL:EXT:enhancely/Resources/Private/Language/locallang_mod.xlf:raw.copied')}">
+              <f:translate key="LLL:EXT:enhancely/Resources/Private/Language/locallang_mod.xlf:raw.copy"/>
+            </button>
+            <a href="https://validator.schema.org/#url={state.url -> f:format.urlencode()}"
+               target="_blank" rel="noopener noreferrer"
+               class="btn btn-default btn-sm">
+              <f:translate key="LLL:EXT:enhancely/Resources/Private/Language/locallang_mod.xlf:raw.validate_schema"/>
+              <span aria-hidden="true">↗</span>
+            </a>
+            <a href="https://search.google.com/test/rich-results?url={state.url -> f:format.urlencode()}"
+               target="_blank" rel="noopener noreferrer"
+               class="btn btn-default btn-sm">
+              <f:translate key="LLL:EXT:enhancely/Resources/Private/Language/locallang_mod.xlf:raw.validate_google"/>
+              <span aria-hidden="true">↗</span>
+            </a>
+          </div>
         </f:if>
 
         <f:if condition="{state.errorMessage}">
