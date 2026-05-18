@@ -10,6 +10,7 @@ use Enhancely\Enhancely\Backend\SanityCheck\SanityChecker;
 use Enhancely\Enhancely\Configuration\ExtensionConfigurationInterface;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use TYPO3\CMS\Backend\Template\ModuleTemplateFactory;
 use TYPO3\CMS\Core\Cache\Frontend\FrontendInterface;
 
 final class EnhancelyStatusControllerTest extends TestCase
@@ -19,6 +20,7 @@ final class EnhancelyStatusControllerTest extends TestCase
         ?FrontendInterface $cache = null,
         ?\Enhancely\Enhancely\Backend\InfoModule\UrlResolverInterface $resolver = null,
         ?\Enhancely\Enhancely\Backend\InfoModule\JsonLdFetcherInterface $fetcher = null,
+        ?ModuleTemplateFactory $moduleTemplateFactory = null,
     ): EnhancelyStatusController {
         if ($resolver === null) {
             $resolver = $this->createMock(\Enhancely\Enhancely\Backend\InfoModule\UrlResolverInterface::class);
@@ -33,6 +35,7 @@ final class EnhancelyStatusControllerTest extends TestCase
             new SanityChecker(),
             $resolver,
             $fetcher,
+            $moduleTemplateFactory ?? $this->createMock(ModuleTemplateFactory::class),
         );
     }
 
@@ -92,6 +95,7 @@ final class EnhancelyStatusControllerTest extends TestCase
             new SanityChecker(),
             $resolver,
             $this->createMock(\Enhancely\Enhancely\Backend\InfoModule\JsonLdFetcherInterface::class),
+            $this->createMock(ModuleTemplateFactory::class),
         );
 
         $state = $controller->buildViewState(42, 0, 1, false);
@@ -125,6 +129,7 @@ final class EnhancelyStatusControllerTest extends TestCase
             new SanityChecker(),
             $this->urlResolverMock(),
             $fetcher,
+            $this->createMock(ModuleTemplateFactory::class),
         );
 
         $state = $controller->buildViewState(1, 0, 1, false);
@@ -162,6 +167,7 @@ final class EnhancelyStatusControllerTest extends TestCase
             new SanityChecker(),
             $this->urlResolverMock(),
             $fetcher,
+            $this->createMock(ModuleTemplateFactory::class),
         );
 
         $state = $controller->buildViewState(1, 0, 1, false);
@@ -192,6 +198,7 @@ final class EnhancelyStatusControllerTest extends TestCase
             new SanityChecker(),
             $this->urlResolverMock(),
             $fetcher,
+            $this->createMock(ModuleTemplateFactory::class),
         );
 
         $controller->buildViewState(1, 0, 1, forceRefresh: true);
@@ -221,6 +228,7 @@ final class EnhancelyStatusControllerTest extends TestCase
             new SanityChecker(),
             $this->urlResolverMock(),
             $fetcher,
+            $this->createMock(ModuleTemplateFactory::class),
         );
 
         $state = $controller->buildViewState(1, 0, 1, false);

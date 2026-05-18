@@ -6,7 +6,14 @@ namespace Enhancely\Enhancely\Backend\InfoModule;
 
 use Enhancely\Enhancely\Backend\SanityCheck\SanityChecker;
 use Enhancely\Enhancely\Configuration\ExtensionConfigurationInterface;
+use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
+use TYPO3\CMS\Backend\Template\ModuleTemplateFactory;
+use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Cache\Frontend\FrontendInterface;
+use TYPO3\CMS\Core\Http\HtmlResponse;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Fluid\View\StandaloneView;
 
 final class EnhancelyStatusController
 {
@@ -16,7 +23,44 @@ final class EnhancelyStatusController
         private readonly SanityChecker $sanityChecker,
         private readonly UrlResolverInterface $urlResolver,
         private readonly JsonLdFetcherInterface $fetcher,
+        private readonly ModuleTemplateFactory $moduleTemplateFactory,
     ) {}
+
+    public function __invoke(ServerRequestInterface $request): ResponseInterface
+    {
+        $params = $request->getQueryParams() + (array)$request->getParsedBody();
+        $pageUid = (int)($params['id'] ?? 0);
+        $languageId = (int)($params['language'] ?? 0);
+        $forceRefresh = !empty($params['forceRefresh']);
+
+        $doktype = $this->resolveDoktype($pageUid);
+
+        $state = $this->buildViewState($pageUid, $languageId, $doktype, $forceRefresh);
+
+        $view = GeneralUtility::makeInstance(StandaloneView::class);
+        $view->setTemplateRootPaths([
+            'EXT:enhancely/Resources/Private/Templates/',
+        ]);
+        $view->setPartialRootPaths([
+            'EXT:enhancely/Resources/Private/Partials/',
+        ]);
+        $view->setTemplate('Backend/InfoModule/Show');
+        $view->assign('state', $state);
+
+        $moduleTemplate = $this->moduleTemplateFactory->create($request);
+        $moduleTemplate->setContent($view->render());
+
+        return new HtmlResponse($moduleTemplate->renderContent());
+    }
+
+    private function resolveDoktype(int $pageUid): int
+    {
+        if ($pageUid <= 0) {
+            return 0;
+        }
+        $row = BackendUtility::getRecord('pages', $pageUid, 'doktype');
+        return (int)($row['doktype'] ?? 0);
+    }
 
     public function buildViewState(
         int $pageUid,

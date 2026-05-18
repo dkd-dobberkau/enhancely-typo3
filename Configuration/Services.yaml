@@ -19,3 +19,18 @@ services:
     class: TYPO3\CMS\Core\Cache\Frontend\FrontendInterface
     factory: ['@TYPO3\CMS\Core\Cache\CacheManager', 'getCache']
     arguments: ['enhancely_etag']
+
+  Enhancely\Enhancely\Backend\InfoModule\EnhancelyStatusController:
+    public: true
+    arguments:
+      $cache: '@cache.enhancely_etag'
+
+  Enhancely\Enhancely\Backend\InfoModule\JsonLdFetcher:
+    public: true
+
+  Enhancely\Enhancely\Backend\InfoModule\UrlResolver:
+    public: true
+
+  Enhancely\Enhancely\Backend\InfoModule\JsonLdFetcherInterface: '@Enhancely\Enhancely\Backend\InfoModule\JsonLdFetcher'
+  Enhancely\Enhancely\Backend\InfoModule\UrlResolverInterface: '@Enhancely\Enhancely\Backend\InfoModule\UrlResolver'
+  Enhancely\Enhancely\Configuration\ExtensionConfigurationInterface: '@Enhancely\Enhancely\Configuration\ExtensionConfiguration'
