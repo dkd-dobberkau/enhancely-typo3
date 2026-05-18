@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xliff version="1.0">
+  <file source-language="en" datatype="plaintext" original="messages" date="2026-05-18T00:00:00Z" product-name="enhancely">
+    <header/>
+    <body>
+      <trans-unit id="mlang_tabs_tab"><source>Enhancely JSON-LD</source></trans-unit>
+      <trans-unit id="banner.not_configured"><source>Extension is not configured. Set the API key in Admin Tools › Settings › Extension Configuration › enhancely.</source></trans-unit>
+      <trans-unit id="banner.disabled"><source>Extension is disabled. Enable it in Extension Configuration.</source></trans-unit>
+      <trans-unit id="banner.site_error"><source>Cannot resolve the public URL for this page:</source></trans-unit>
+      <trans-unit id="badge.ready"><source>ready</source></trans-unit>
+      <trans-unit id="badge.processing"><source>processing</source></trans-unit>
+      <trans-unit id="badge.error"><source>error</source></trans-unit>
+      <trans-unit id="badge.skipped"><source>skipped</source></trans-unit>
+      <trans-unit id="meta.crawled"><source>Crawled</source></trans-unit>
+      <trans-unit id="meta.etag"><source>ETag</source></trans-unit>
+      <trans-unit id="meta.hash"><source>Hash</source></trans-unit>
+      <trans-unit id="meta.source"><source>Source</source></trans-unit>
+      <trans-unit id="meta.graphtypes"><source>Graph nodes</source></trans-unit>
+      <trans-unit id="sanity.heading"><source>Sanity checks</source></trans-unit>
+      <trans-unit id="raw.heading"><source>Raw JSON-LD</source></trans-unit>
+      <trans-unit id="refresh"><source>Refresh</source></trans-unit>
+    </body>
+  </file>
+</xliff>

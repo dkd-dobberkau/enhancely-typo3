@@ -31,4 +31,12 @@ final class ViewState
         public readonly ?array $rawJsonLd = null,
         public readonly ?string $errorMessage = null,
     ) {}
+
+    public function getRawJsonLdPretty(): string
+    {
+        if ($this->rawJsonLd === null) {
+            return '';
+        }
+        return (string)json_encode($this->rawJsonLd, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+    }
 }
