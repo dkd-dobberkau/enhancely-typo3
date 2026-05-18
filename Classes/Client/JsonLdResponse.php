@@ -124,6 +124,30 @@ final class JsonLdResponse
     }
 
     /**
+     * Get crawled timestamp from API response.
+     */
+    public function crawledAt(): ?string
+    {
+        return isset($this->data['crawled_at']) ? (string)$this->data['crawled_at'] : null;
+    }
+
+    /**
+     * Get API status from response.
+     */
+    public function apiStatus(): ?string
+    {
+        return isset($this->data['status']) ? (string)$this->data['status'] : null;
+    }
+
+    /**
+     * Get content hash from API response.
+     */
+    public function hash(): ?string
+    {
+        return isset($this->data['hash']) ? (string)$this->data['hash'] : null;
+    }
+
+    /**
      * Get raw JSON-LD data.
      *
      * @return array<string, mixed>|null
