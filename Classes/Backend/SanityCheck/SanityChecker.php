@@ -18,6 +18,7 @@ final class SanityChecker
             $this->checkBreadcrumbAbsolute($jsonLd),
             $this->checkTitleMismatch($jsonLd, $expectedWebsiteTitle),
             $this->checkCrawlFreshness($apiMeta),
+            $this->checkSize($jsonLd),
         ];
     }
 
@@ -125,6 +126,28 @@ final class SanityChecker
         return CheckResult::warn(
             'crawl_freshness',
             sprintf('Last crawl is %d days old (threshold 7 days)', (int)($ageSeconds / 86400))
+        );
+    }
+
+    private function checkSize(array $jsonLd): CheckResult
+    {
+        $bytes = strlen((string)json_encode($jsonLd));
+        $cap = 1024 * 1024;            // 1 MiB — matches HttpClient::MAX_RESPONSE_BYTES
+        $threshold = (int)($cap * 0.8); // 80%
+
+        if ($bytes < $threshold) {
+            return CheckResult::pass(
+                'size',
+                sprintf('JSON-LD %s KiB (cap 1 MiB)', number_format($bytes / 1024, 1))
+            );
+        }
+
+        return CheckResult::warn(
+            'size',
+            sprintf(
+                'JSON-LD %s KiB approaching 1 MiB cap',
+                number_format($bytes / 1024, 1)
+            )
         );
     }
 

@@ -155,4 +155,28 @@ final class SanityCheckerTest extends TestCase
 
         self::assertSame('pass', $r->level);
     }
+
+    #[Test]
+    public function sizeCheckPassesForSmallGraph(): void
+    {
+        $jsonLd = ['@graph' => [['@type' => 'WebPage', 'name' => 'small']]];
+
+        $results = (new SanityChecker())->check($jsonLd, [], '');
+        $r = $this->findResult($results, 'size');
+
+        self::assertSame('pass', $r->level);
+    }
+
+    #[Test]
+    public function sizeCheckWarnsWhenApproachingCap(): void
+    {
+        // 80% of 1 MiB ≈ 838,860 bytes. Build a payload above that.
+        $blob = str_repeat('x', 900_000);
+        $jsonLd = ['@graph' => [['@type' => 'WebPage', 'note' => $blob]]];
+
+        $results = (new SanityChecker())->check($jsonLd, [], '');
+        $r = $this->findResult($results, 'size');
+
+        self::assertSame('warn', $r->level);
+    }
 }
