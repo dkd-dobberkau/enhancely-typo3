@@ -1,3 +1,10 @@
+## 1.4.1 — 2026-05-18
+
+### Fixed
+- Backend status template: `f:uri.resource` requires an Extbase request or an explicit `EXT:` path in a BE-module context. Switched to `path="EXT:enhancely/Resources/Public/Css/backend.css"` so the stylesheet resolves correctly.
+
+---
+
 ## 1.4.0 — 2026-05-18
 
 ### Breaking
