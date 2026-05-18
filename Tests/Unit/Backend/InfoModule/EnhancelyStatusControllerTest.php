@@ -16,12 +16,18 @@ final class EnhancelyStatusControllerTest extends TestCase
 {
     private function controllerWith(
         ExtensionConfigurationInterface $config,
-        ?FrontendInterface $cache = null
+        ?FrontendInterface $cache = null,
+        ?\Enhancely\Enhancely\Backend\InfoModule\UrlResolverInterface $resolver = null,
     ): EnhancelyStatusController {
+        if ($resolver === null) {
+            $resolver = $this->createMock(\Enhancely\Enhancely\Backend\InfoModule\UrlResolverInterface::class);
+            $resolver->method('resolve')->willReturn('https://example.com/');
+        }
         return new EnhancelyStatusController(
             $config,
             $cache ?? $this->createMock(FrontendInterface::class),
             new SanityChecker(),
+            $resolver,
         );
     }
 
@@ -59,5 +65,24 @@ final class EnhancelyStatusControllerTest extends TestCase
         $state = $controller->buildViewState(1, 0, 404, false);
 
         self::assertSame('skipped', $state->statusBadge);
+    }
+
+    #[Test]
+    public function returnsSiteErrorWhenUrlResolverThrows(): void
+    {
+        $resolver = $this->createMock(\Enhancely\Enhancely\Backend\InfoModule\UrlResolverInterface::class);
+        $resolver->method('resolve')->willThrowException(new \RuntimeException('no site for page 42'));
+
+        $controller = new EnhancelyStatusController(
+            $this->configMock(),
+            $this->createMock(FrontendInterface::class),
+            new SanityChecker(),
+            $resolver,
+        );
+
+        $state = $controller->buildViewState(42, 0, 1, false);
+
+        self::assertSame(ViewState::BANNER_SITE_ERROR, $state->banner);
+        self::assertStringContainsString('no site for page 42', $state->bannerDetail);
     }
 }

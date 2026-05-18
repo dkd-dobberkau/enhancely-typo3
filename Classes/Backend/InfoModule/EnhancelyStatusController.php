@@ -14,6 +14,7 @@ final class EnhancelyStatusController
         private readonly ExtensionConfigurationInterface $config,
         private readonly FrontendInterface $cache,
         private readonly SanityChecker $sanityChecker,
+        private readonly UrlResolverInterface $urlResolver,
     ) {}
 
     public function buildViewState(
@@ -43,7 +44,16 @@ final class EnhancelyStatusController
             );
         }
 
-        // URL resolution + fetch logic — Task 10 onwards.
-        return new ViewState(statusBadge: 'unknown');
+        try {
+            $url = $this->urlResolver->resolve($pageUid, $languageId);
+        } catch (\RuntimeException $e) {
+            return new ViewState(
+                banner: ViewState::BANNER_SITE_ERROR,
+                bannerDetail: $e->getMessage(),
+            );
+        }
+
+        // Cache + live fetch — Task 11.
+        return new ViewState(statusBadge: 'unknown', url: $url);
     }
 }
