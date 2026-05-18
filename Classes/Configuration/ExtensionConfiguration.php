@@ -7,7 +7,7 @@ namespace Enhancely\Enhancely\Configuration;
 use TYPO3\CMS\Core\Configuration\ExtensionConfiguration as Typo3ExtensionConfiguration;
 use TYPO3\CMS\Core\SingletonInterface;
 
-final class ExtensionConfiguration implements SingletonInterface
+final class ExtensionConfiguration implements SingletonInterface, ExtensionConfigurationInterface
 {
     private const DEFAULT_API_BASE_URL = 'https://api.enhancely.ai';
     private const DEFAULT_CACHE_LIFETIME = 86400;
