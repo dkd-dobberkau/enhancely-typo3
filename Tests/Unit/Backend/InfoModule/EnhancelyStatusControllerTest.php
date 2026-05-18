@@ -196,4 +196,35 @@ final class EnhancelyStatusControllerTest extends TestCase
 
         $controller->buildViewState(1, 0, 1, forceRefresh: true);
     }
+
+    #[Test]
+    public function legacyCacheEntryWithoutMetaTriggersLiveFetch(): void
+    {
+        $cache = $this->createMock(FrontendInterface::class);
+        $cache->method('get')->willReturn([
+            'etag' => 'etag-old',
+            'jsonld' => '<script>...</script>',
+            // no 'meta' key — written by < 1.3.0
+        ]);
+
+        $response = \Enhancely\Enhancely\Client\JsonLdResponse::fromApiResponse(200, [
+            'jsonld' => ['@graph' => []],
+            'status' => 'ready',
+        ], 'etag-new');
+
+        $fetcher = $this->createMock(\Enhancely\Enhancely\Backend\InfoModule\JsonLdFetcherInterface::class);
+        $fetcher->expects(self::once())->method('fetch')->willReturn($response);
+
+        $controller = new EnhancelyStatusController(
+            $this->configMock(),
+            $cache,
+            new SanityChecker(),
+            $this->urlResolverMock(),
+            $fetcher,
+        );
+
+        $state = $controller->buildViewState(1, 0, 1, false);
+
+        self::assertStringContainsString('live', $state->source);
+    }
 }
