@@ -1,3 +1,10 @@
+## 1.4.2 — 2026-05-18
+
+### Fixed
+- Backend status template and Status partial: `f:translate` in a non-Extbase BE-module context throws unless an `extensionName` or full `LLL:` reference is given. Switched all `<f:translate key="…"/>` calls to full `LLL:EXT:enhancely/Resources/Private/Language/locallang_mod.xlf:…` syntax.
+
+---
+
 ## 1.4.1 — 2026-05-18
 
 ### Fixed

@@ -5,7 +5,7 @@
 <f:if condition="{state.banner}">
   <f:then>
     <div class="enhancely-banner enhancely-banner--{state.banner}">
-      <f:translate key="banner.{state.banner}"/> {state.bannerDetail}
+      <f:translate key="LLL:EXT:enhancely/Resources/Private/Language/locallang_mod.xlf:banner.{state.banner}"/> {state.bannerDetail}
     </div>
   </f:then>
   <f:else>
@@ -14,22 +14,22 @@
       <code class="enhancely-url">{state.url}</code>
       <form method="post" class="enhancely-refresh">
         <input type="hidden" name="forceRefresh" value="1"/>
-        <button type="submit"><f:translate key="refresh"/></button>
+        <button type="submit"><f:translate key="LLL:EXT:enhancely/Resources/Private/Language/locallang_mod.xlf:refresh"/></button>
       </form>
     </div>
 
     <f:if condition="{state.crawledAt}">
       <table class="enhancely-meta">
-        <tr><td><f:translate key="meta.crawled"/></td><td>{state.crawledAt}</td></tr>
-        <tr><td><f:translate key="meta.etag"/></td><td><code>{state.etag}</code></td></tr>
-        <tr><td><f:translate key="meta.hash"/></td><td><code>{state.hash}</code></td></tr>
-        <tr><td><f:translate key="meta.source"/></td><td>{state.source}</td></tr>
-        <tr><td><f:translate key="meta.graphtypes"/></td><td><f:for each="{state.graphTypes}" as="t" iteration="i">{t}<f:if condition="{i.isLast} == 0">, </f:if></f:for></td></tr>
+        <tr><td><f:translate key="LLL:EXT:enhancely/Resources/Private/Language/locallang_mod.xlf:meta.crawled"/></td><td>{state.crawledAt}</td></tr>
+        <tr><td><f:translate key="LLL:EXT:enhancely/Resources/Private/Language/locallang_mod.xlf:meta.etag"/></td><td><code>{state.etag}</code></td></tr>
+        <tr><td><f:translate key="LLL:EXT:enhancely/Resources/Private/Language/locallang_mod.xlf:meta.hash"/></td><td><code>{state.hash}</code></td></tr>
+        <tr><td><f:translate key="LLL:EXT:enhancely/Resources/Private/Language/locallang_mod.xlf:meta.source"/></td><td>{state.source}</td></tr>
+        <tr><td><f:translate key="LLL:EXT:enhancely/Resources/Private/Language/locallang_mod.xlf:meta.graphtypes"/></td><td><f:for each="{state.graphTypes}" as="t" iteration="i">{t}<f:if condition="{i.isLast} == 0">, </f:if></f:for></td></tr>
       </table>
     </f:if>
 
     <f:if condition="{state.sanityChecks}">
-      <h3><f:translate key="sanity.heading"/></h3>
+      <h3><f:translate key="LLL:EXT:enhancely/Resources/Private/Language/locallang_mod.xlf:sanity.heading"/></h3>
       <ul class="enhancely-sanity">
         <f:for each="{state.sanityChecks}" as="check">
           <li class="enhancely-sanity__row enhancely-sanity__row--{check.level}">
@@ -41,7 +41,7 @@
     </f:if>
 
     <f:if condition="{state.rawJsonLd}">
-      <h3><f:translate key="raw.heading"/></h3>
+      <h3><f:translate key="LLL:EXT:enhancely/Resources/Private/Language/locallang_mod.xlf:raw.heading"/></h3>
       <pre class="enhancely-raw">{state.rawJsonLdPretty -> f:format.htmlspecialchars()}</pre>
     </f:if>
 
