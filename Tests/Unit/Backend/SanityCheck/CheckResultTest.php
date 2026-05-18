@@ -25,6 +25,8 @@ final class CheckResultTest extends TestCase
     {
         $result = CheckResult::warn('title_mismatch', 'Stale title');
 
+        self::assertSame('title_mismatch', $result->id);
         self::assertSame('warn', $result->level);
+        self::assertSame('Stale title', $result->message);
     }
 }
