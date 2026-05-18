@@ -5,13 +5,9 @@ declare(strict_types=1);
 namespace Enhancely\Tests\Unit\Middleware;
 
 use Enhancely\Enhancely\Client\JsonLdResponse;
-use Enhancely\Enhancely\Configuration\ExtensionConfiguration;
 use Enhancely\Enhancely\Middleware\JsonLdMiddleware;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Psr\Http\Message\ResponseInterface;
-use Psr\Http\Message\ServerRequestInterface;
-use Psr\Http\Server\RequestHandlerInterface;
 use TYPO3\CMS\Core\Cache\Frontend\FrontendInterface;
 
 final class JsonLdMiddlewareTest extends TestCase
