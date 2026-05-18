@@ -1,3 +1,10 @@
+## 1.4.6 — 2026-05-18
+
+### Changed
+- "Refresh" button renamed to "Re-fetch from Enhancely" with an explanatory note below it: clearing the local TYPO3 cache and re-requesting JSON-LD does NOT trigger Enhancely to re-crawl the page server-side. Enhancely's stored data only refreshes on its own nightly crawl, or via Enhancely support. Sets correct expectations for editors.
+
+---
+
 ## 1.4.5 — 2026-05-18
 
 ### Changed

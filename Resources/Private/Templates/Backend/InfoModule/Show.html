@@ -42,17 +42,21 @@
       </f:then>
       <f:else>
 
-        <div class="d-flex align-items-center gap-2 flex-wrap mb-3">
+        <div class="d-flex align-items-center gap-2 flex-wrap mb-2">
           <f:render partial="Backend/Status" arguments="{state: state}"/>
           <code class="text-body-secondary">{state.url}</code>
           <form method="post" class="ms-auto">
             <input type="hidden" name="id" value="{pageUid}"/>
             <input type="hidden" name="forceRefresh" value="1"/>
-            <button type="submit" class="btn btn-default btn-sm">
+            <button type="submit" class="btn btn-default btn-sm"
+                    title="{f:translate(key:'LLL:EXT:enhancely/Resources/Private/Language/locallang_mod.xlf:refresh.help')}">
               <f:translate key="LLL:EXT:enhancely/Resources/Private/Language/locallang_mod.xlf:refresh"/>
             </button>
           </form>
         </div>
+        <p class="text-body-secondary small mb-3">
+          <f:translate key="LLL:EXT:enhancely/Resources/Private/Language/locallang_mod.xlf:refresh.help"/>
+        </p>
 
         <f:if condition="{state.crawledAt}">
           <table class="table table-striped table-hover">
