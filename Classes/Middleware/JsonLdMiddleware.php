@@ -102,13 +102,10 @@ final class JsonLdMiddleware implements MiddlewareInterface
                 $jsonLdScript = (string)$enhancelyResponse;
 
                 // Cache the new data
-                $this->cache->set(
+                self::writeCachePayload(
+                    $this->cache,
                     $cacheIdentifier,
-                    [
-                        'etag' => $enhancelyResponse->etag(),
-                        'jsonld' => $jsonLdScript,
-                    ],
-                    ['pages'],
+                    $enhancelyResponse,
                     $this->configuration->getCacheLifetime()
                 );
             } else {
@@ -140,6 +137,40 @@ final class JsonLdMiddleware implements MiddlewareInterface
             ]);
             return $response;
         }
+    }
+
+    /**
+     * Build and store the cache payload for one URL.
+     *
+     * Two layers in the payload:
+     *  - 'etag' + 'jsonld' — consumed by this middleware on subsequent FE
+     *    requests (conditional ETag handling).
+     *  - 'meta' — consumed by the BE info-module tab. Backwards compatible:
+     *    entries written by older versions lack the 'meta' key, and the BE
+     *    treats those as a cache miss.
+     */
+    public static function writeCachePayload(
+        FrontendInterface $cache,
+        string $cacheIdentifier,
+        JsonLdResponse $response,
+        int $lifetime
+    ): void {
+        $cache->set(
+            $cacheIdentifier,
+            [
+                'etag' => $response->etag(),
+                'jsonld' => (string)$response,
+                'meta' => [
+                    'crawled_at' => $response->crawledAt(),
+                    'status' => $response->apiStatus(),
+                    'hash' => $response->hash(),
+                    'graph' => $response->jsonld(),
+                    'cached_at' => time(),
+                ],
+            ],
+            ['pages'],
+            $lifetime
+        );
     }
 
     private function getCacheIdentifier(string $url): string
