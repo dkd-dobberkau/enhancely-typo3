@@ -1,28 +1,11 @@
-.enhancely-banner { padding: 8px 12px; border-radius: 4px; margin-bottom: 12px; }
-.enhancely-banner--not_configured,
-.enhancely-banner--disabled { background: #fff4d6; border: 1px solid #f0d27a; }
-.enhancely-banner--site_error { background: #fbe3e3; border: 1px solid #e7a0a0; }
-
-.enhancely-statusrow { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
-.enhancely-statusrow .enhancely-refresh { margin-left: auto; }
-.enhancely-url { font-size: 12px; color: #555; }
-
-.enhancely-badge { padding: 3px 8px; border-radius: 3px; font-weight: 600; font-size: 12px; }
-.enhancely-badge--ready { background: #e6f7ee; color: #0a7; border: 1px solid #b6e3c8; }
-.enhancely-badge--processing { background: #fff4d6; color: #8a6d1a; border: 1px solid #f0d27a; }
-.enhancely-badge--error { background: #fbe3e3; color: #a33; border: 1px solid #e7a0a0; }
-.enhancely-badge--skipped { background: #eef0f2; color: #555; border: 1px solid #ccd2d8; }
-.enhancely-badge--unknown { background: #eef0f2; color: #888; border: 1px solid #ccd2d8; }
-
-.enhancely-meta { font-size: 12px; border-collapse: collapse; margin-bottom: 12px; }
-.enhancely-meta td { padding: 3px 12px 3px 0; vertical-align: top; }
-.enhancely-meta td:first-child { color: #666; width: 120px; }
-
-.enhancely-sanity { list-style: none; padding: 0; margin: 0 0 12px 0; }
-.enhancely-sanity__row { padding: 6px 10px; border-radius: 3px; margin-bottom: 4px; font-size: 12px; }
-.enhancely-sanity__row--pass { background: #e6f7ee; border: 1px solid #b6e3c8; color: #0a7; }
-.enhancely-sanity__row--warn { background: #fff4d6; border: 1px solid #f0d27a; color: #8a6d1a; }
-
-.enhancely-raw { background: #1e1e1e; color: #d4d4d4; padding: 10px; border-radius: 3px; font-size: 11px; line-height: 1.4; overflow: auto; max-height: 320px; }
-
-.enhancely-error { background: #fbe3e3; border: 1px solid #e7a0a0; padding: 8px 12px; border-radius: 4px; color: #a33; }
+.enhancely-raw {
+    background: #1e1e1e;
+    color: #d4d4d4;
+    padding: 12px;
+    border-radius: 4px;
+    font-size: 12px;
+    line-height: 1.45;
+    overflow: auto;
+    max-height: 420px;
+    white-space: pre;
+}

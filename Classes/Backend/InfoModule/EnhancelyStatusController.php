@@ -36,6 +36,15 @@ final class EnhancelyStatusController
 
         $moduleTemplate = $this->moduleTemplateFactory->create($request);
         $moduleTemplate->assign('state', $state);
+        $moduleTemplate->assign('pageUid', $pageUid);
+
+        $pageInfo = $pageUid > 0 ? (BackendUtility::readPageAccess($pageUid, '1=1') ?: []) : [];
+        $moduleTemplate->setTitle('Enhancely JSON-LD', $pageInfo['title'] ?? '');
+        if ($pageInfo !== []) {
+            $moduleTemplate->getDocHeaderComponent()->setMetaInformation($pageInfo);
+        }
+        $moduleTemplate->makeDocHeaderModuleMenu(['id' => $pageUid]);
+
         return $moduleTemplate->renderResponse('Backend/InfoModule/Show');
     }
 

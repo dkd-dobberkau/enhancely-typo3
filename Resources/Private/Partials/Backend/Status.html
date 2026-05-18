@@ -1,9 +1,9 @@
 <html xmlns:f="http://typo3.org/ns/TYPO3/CMS/Fluid/ViewHelpers" data-namespace-typo3-fluid="true">
 <f:switch expression="{state.statusBadge}">
-  <f:case value="ready"><span class="enhancely-badge enhancely-badge--ready">● <f:translate key="LLL:EXT:enhancely/Resources/Private/Language/locallang_mod.xlf:badge.ready"/></span></f:case>
-  <f:case value="processing"><span class="enhancely-badge enhancely-badge--processing">● <f:translate key="LLL:EXT:enhancely/Resources/Private/Language/locallang_mod.xlf:badge.processing"/></span></f:case>
-  <f:case value="error"><span class="enhancely-badge enhancely-badge--error">● <f:translate key="LLL:EXT:enhancely/Resources/Private/Language/locallang_mod.xlf:badge.error"/></span></f:case>
-  <f:case value="skipped"><span class="enhancely-badge enhancely-badge--skipped">● <f:translate key="LLL:EXT:enhancely/Resources/Private/Language/locallang_mod.xlf:badge.skipped"/></span></f:case>
-  <f:defaultCase><span class="enhancely-badge enhancely-badge--unknown">●</span></f:defaultCase>
+  <f:case value="ready"><span class="badge badge-success"><f:translate key="LLL:EXT:enhancely/Resources/Private/Language/locallang_mod.xlf:badge.ready"/></span></f:case>
+  <f:case value="processing"><span class="badge badge-warning"><f:translate key="LLL:EXT:enhancely/Resources/Private/Language/locallang_mod.xlf:badge.processing"/></span></f:case>
+  <f:case value="error"><span class="badge badge-danger"><f:translate key="LLL:EXT:enhancely/Resources/Private/Language/locallang_mod.xlf:badge.error"/></span></f:case>
+  <f:case value="skipped"><span class="badge badge-secondary"><f:translate key="LLL:EXT:enhancely/Resources/Private/Language/locallang_mod.xlf:badge.skipped"/></span></f:case>
+  <f:defaultCase><span class="badge badge-secondary">unknown</span></f:defaultCase>
 </f:switch>
 </html>

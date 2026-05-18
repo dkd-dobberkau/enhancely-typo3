@@ -1,3 +1,16 @@
+## 1.4.5 — 2026-05-18
+
+### Changed
+- Backend module layout now matches the visual conventions of EXT:info (Page Information / Translation Status):
+  - Added a `Resources/Private/Layouts/Module.fluid.html` so the template can `<f:layout name="Module"/>` and pick up the standard module-body chrome.
+  - Replaced the custom banner/sanity-check styling with `<f:be.infobox>` so warnings and errors get the standard BE severity colors and icons.
+  - Switched the meta panel to a Bootstrap `table table-striped`, the action button to `btn btn-default`, and status badges to standard `badge badge-*` classes.
+  - Page title rendered as `<h1>` at the top of the body.
+- Controller now sets the module title and page meta information on the doc header (`setTitle`, `setMetaInformation`, `makeDocHeaderModuleMenu`), so the BE chrome shows the page breadcrumb and shortcut context like the other Status sub-modules.
+- Trimmed `Resources/Public/Css/backend.css` to just the dark `<pre>` styling for the raw JSON-LD viewer — everything else is now standard TYPO3 BE styling.
+
+---
+
 ## 1.4.4 — 2026-05-18
 
 ### Fixed
