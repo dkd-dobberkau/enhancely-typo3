@@ -1,3 +1,10 @@
+## 1.4.4 — 2026-05-18
+
+### Fixed
+- Module appears in the v14 backend sidebar. TYPO3 v14 renamed the legacy `web_info` module to `content_status`. The route alias `web_info` still resolves for direct URLs, but TYPO3 does NOT resolve the alias when used as a `parent` reference in `Configuration/Backend/Modules.php` — sub-modules with `parent: web_info` succeed at routing but never show up in the v14 sidebar. Switched to `Typo3Version`-aware parent selection: `content_status` on v14, `web_info` on v13.
+
+---
+
 ## 1.4.3 — 2026-05-18
 
 ### Fixed
