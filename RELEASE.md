@@ -1,3 +1,10 @@
+## 1.4.3 — 2026-05-18
+
+### Fixed
+- Module sidebar label: TYPO3 v13/v14 reads `title` / `shortDescription` / `description` keys from the `labels` xlf path, not the legacy `mlang_tabs_tab`. Added the v13+ keys so the module shows as "Enhancely JSON-LD" in the BE sidebar instead of falling back to "Status".
+
+---
+
 ## 1.4.2 — 2026-05-18
 
 ### Fixed

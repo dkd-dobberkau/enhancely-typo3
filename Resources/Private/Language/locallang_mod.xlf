@@ -4,6 +4,9 @@
     <header/>
     <body>
       <trans-unit id="mlang_tabs_tab"><source>Enhancely JSON-LD</source></trans-unit>
+      <trans-unit id="title"><source>Enhancely JSON-LD</source></trans-unit>
+      <trans-unit id="shortDescription"><source>Enhancely status for the current page</source></trans-unit>
+      <trans-unit id="description"><source>Read-only view of the Enhancely-generated JSON-LD for the selected page: status, crawl timestamp, ETag, sanity checks, and raw payload.</source></trans-unit>
       <trans-unit id="banner.not_configured"><source>Extension is not configured. Set the API key in Admin Tools › Settings › Extension Configuration › enhancely.</source></trans-unit>
       <trans-unit id="banner.disabled"><source>Extension is disabled. Enable it in Extension Configuration.</source></trans-unit>
       <trans-unit id="banner.site_error"><source>Cannot resolve the public URL for this page:</source></trans-unit>
