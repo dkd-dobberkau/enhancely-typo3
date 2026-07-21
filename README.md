@@ -19,7 +19,7 @@ composer require enhancely/enhancely-for-typo3
 vendor/bin/typo3 database:updateschema
 ```
 
-In TYPO3 v12 (Classic Mode), activate the extension additionally via **Admin Tools > Extensions**.
+In Classic (non-Composer) installations, activate the extension additionally via **Admin Tools > Extensions**.
 
 ## Configuration
 
