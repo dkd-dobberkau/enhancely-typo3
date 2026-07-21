@@ -16,7 +16,7 @@ use Psr\Http\Server\RequestHandlerInterface;
 use Psr\Log\LoggerInterface;
 use TYPO3\CMS\Core\Cache\Frontend\FrontendInterface;
 use TYPO3\CMS\Core\Http\StreamFactory;
-use TYPO3\CMS\Frontend\Controller\TypoScriptFrontendController;
+use TYPO3\CMS\Frontend\Page\PageInformation;
 
 final class JsonLdMiddleware implements MiddlewareInterface
 {
@@ -62,10 +62,14 @@ final class JsonLdMiddleware implements MiddlewareInterface
             return false;
         }
 
-        // Check excluded page types
-        $tsfe = $request->getAttribute('frontend.controller');
-        if ($tsfe instanceof TypoScriptFrontendController) {
-            $pageType = (int)$tsfe->page['doktype'];
+        // Check excluded page types.
+        // frontend.page.information (PageInformation) replaces the deprecated
+        // TypoScriptFrontendController / $GLOBALS['TSFE'], which is removed in
+        // TYPO3 v14 (see #105230). The attribute exists since v13.0, so this
+        // path works unchanged on both v13 and v14.
+        $pageInformation = $request->getAttribute('frontend.page.information');
+        if ($pageInformation instanceof PageInformation) {
+            $pageType = (int)($pageInformation->getPageRecord()['doktype'] ?? 0);
             if (in_array($pageType, $this->configuration->getExcludedPageTypes(), true)) {
                 return false;
             }
