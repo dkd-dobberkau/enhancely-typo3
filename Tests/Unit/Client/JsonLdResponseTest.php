@@ -2,6 +2,17 @@
 
 declare(strict_types=1);
 
+/*
+ * This file is part of the "enhancely" extension for TYPO3 CMS.
+ *
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
+ *
+ * For the full copyright and license information, please read the
+ * LICENSE file that was distributed with this source code.
+ */
+
 namespace Enhancely\Tests\Unit\Client;
 
 use Enhancely\Enhancely\Client\JsonLdResponse;
@@ -89,10 +100,29 @@ final class JsonLdResponseTest extends TestCase
         $response = JsonLdResponse::fromApiResponse(200, $data, null);
         $output = (string)$response;
 
-        self::assertStringStartsWith('<script type="application/ld+json">', $output);
+        self::assertStringStartsWith(
+            '<script type="application/ld+json" data-source="Enhancely.ai">',
+            $output
+        );
         self::assertStringEndsWith('</script>', $output);
         self::assertStringContainsString('"@context":"https://schema.org"', $output);
         self::assertStringContainsString('"@type":"WebPage"', $output);
+    }
+
+    #[Test]
+    public function toStringOmitsAttributesTheOfficialLibraryInterpolatesUnescaped(): void
+    {
+        $response = JsonLdResponse::fromApiResponse(
+            200,
+            ['jsonld' => ['@type' => 'WebPage']],
+            '"><img src=x onerror=alert(1)>'
+        );
+
+        $output = (string)$response;
+
+        self::assertStringNotContainsString('data-etag', $output);
+        self::assertStringNotContainsString('data-status', $output);
+        self::assertStringNotContainsString('onerror', $output);
     }
 
     #[Test]
