@@ -2,26 +2,124 @@
 
 declare(strict_types=1);
 
+/*
+ * This file is part of the "enhancely" extension for TYPO3 CMS.
+ *
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
+ *
+ * For the full copyright and license information, please read the
+ * LICENSE file that was distributed with this source code.
+ */
+
 namespace Enhancely\Tests\Unit\Client;
 
 use Enhancely\Enhancely\Client\Exception\ApiException;
 use Enhancely\Enhancely\Client\HttpClient;
-use GuzzleHttp\Client as GuzzleClient;
 use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Psr7\Response;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use TYPO3\CMS\Core\Http\Client\GuzzleClientFactory;
+use TYPO3\CMS\Core\Http\RequestFactory;
 
 final class HttpClientTest extends TestCase
 {
-    private function createHttpClient(array $responses): HttpClient
-    {
-        $mock = new MockHandler($responses);
-        $handlerStack = HandlerStack::create($mock);
-        $guzzle = new GuzzleClient(['handler' => $handlerStack]);
+    /** @var array<string, mixed>|null */
+    private ?array $httpConfBackup = null;
 
-        return new HttpClient($guzzle, 'test-api-key');
+    protected function setUp(): void
+    {
+        $this->httpConfBackup = $GLOBALS['TYPO3_CONF_VARS']['HTTP'] ?? null;
+    }
+
+    protected function tearDown(): void
+    {
+        if ($this->httpConfBackup === null) {
+            unset($GLOBALS['TYPO3_CONF_VARS']['HTTP']);
+        } else {
+            $GLOBALS['TYPO3_CONF_VARS']['HTTP'] = $this->httpConfBackup;
+        }
+    }
+
+    private ?MockHandler $mockHandler = null;
+
+    /**
+     * Requests are routed through TYPO3's RequestFactory, so the mock handler
+     * is injected the same way an administrator's proxy or timeout settings
+     * arrive: via $GLOBALS['TYPO3_CONF_VARS']['HTTP'].
+     */
+    private function createHttpClient(array $responses, ?int $timeout = null, array $globalHttpConf = []): HttpClient
+    {
+        $this->mockHandler = new MockHandler($responses);
+        $GLOBALS['TYPO3_CONF_VARS']['HTTP'] = $globalHttpConf + [
+            'verify' => true,
+            'handler' => HandlerStack::create($this->mockHandler),
+        ];
+
+        return new HttpClient(
+            new RequestFactory(new GuzzleClientFactory()),
+            'test-api-key',
+            'https://api.enhancely.ai',
+            $timeout
+        );
+    }
+
+    /**
+     * The reason for routing through RequestFactory at all: a self-built Guzzle
+     * client silently ignores the administrator's proxy configuration, which
+     * breaks every API call on installations that egress through a proxy.
+     */
+    #[Test]
+    public function globalTypo3HttpConfigurationReachesTheRequest(): void
+    {
+        $client = $this->createHttpClient(
+            [new Response(200, [], json_encode(['jsonld' => ['@type' => 'WebPage']]))],
+            null,
+            ['proxy' => 'http://proxy.example.internal:3128', 'timeout' => 42]
+        );
+
+        $client->postJsonLd('https://example.com/page');
+
+        $options = $this->mockHandler->getLastOptions();
+        self::assertSame('http://proxy.example.internal:3128', $options['proxy']);
+        self::assertSame(42, $options['timeout']);
+    }
+
+    #[Test]
+    public function extensionTimeoutOverridesTheGlobalTypo3Timeout(): void
+    {
+        $client = $this->createHttpClient(
+            [new Response(200, [], json_encode(['jsonld' => ['@type' => 'WebPage']]))],
+            5,
+            ['timeout' => 42]
+        );
+
+        $client->postJsonLd('https://example.com/page');
+
+        $options = $this->mockHandler->getLastOptions();
+        self::assertSame(5, $options['timeout']);
+        self::assertSame(5, $options['connect_timeout']);
+    }
+
+    /**
+     * TLS verification is the one option not delegated: the request carries the
+     * API key as a bearer token, so a global verify=false must not downgrade it.
+     */
+    #[Test]
+    public function tlsVerificationStaysOnDespiteGlobalOverride(): void
+    {
+        $client = $this->createHttpClient(
+            [new Response(200, [], json_encode(['jsonld' => ['@type' => 'WebPage']]))],
+            null,
+            ['verify' => false]
+        );
+
+        $client->postJsonLd('https://example.com/page');
+
+        self::assertTrue($this->mockHandler->getLastOptions()['verify']);
     }
 
     #[Test]

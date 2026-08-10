@@ -12,3 +12,6 @@ excludedPageTypes =
 
 # cat=advanced; type=int+; label=Cache Lifetime:Cache lifetime in seconds (default: 86400 = 24 hours)
 cacheLifetime = 86400
+
+# cat=advanced; type=int+; label=Request Timeout:Timeout in seconds for API calls. 0 = use the global TYPO3 setting ($GLOBALS['TYPO3_CONF_VARS']['HTTP']['timeout'])
+timeout = 0

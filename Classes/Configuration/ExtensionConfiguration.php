@@ -2,6 +2,17 @@
 
 declare(strict_types=1);
 
+/*
+ * This file is part of the "enhancely" extension for TYPO3 CMS.
+ *
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
+ *
+ * For the full copyright and license information, please read the
+ * LICENSE file that was distributed with this source code.
+ */
+
 namespace Enhancely\Enhancely\Configuration;
 
 use TYPO3\CMS\Core\Configuration\ExtensionConfiguration as Typo3ExtensionConfiguration;
@@ -45,6 +56,17 @@ final class ExtensionConfiguration implements SingletonInterface, ExtensionConfi
         // Reject non-positive values; the API key is sent on every request,
         // a 0/negative TTL would cause cache thrashing.
         return $lifetime > 0 ? $lifetime : self::DEFAULT_CACHE_LIFETIME;
+    }
+
+    /**
+     * Per-request timeout in seconds, or null to leave TYPO3's global
+     * $GLOBALS['TYPO3_CONF_VARS']['HTTP']['timeout'] in charge.
+     */
+    public function getTimeout(): ?int
+    {
+        $timeout = (int)($this->configuration['timeout'] ?? 0);
+
+        return $timeout > 0 ? $timeout : null;
     }
 
     public function getApiBaseUrl(): string

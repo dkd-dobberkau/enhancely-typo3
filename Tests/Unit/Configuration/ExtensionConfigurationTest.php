@@ -2,6 +2,17 @@
 
 declare(strict_types=1);
 
+/*
+ * This file is part of the "enhancely" extension for TYPO3 CMS.
+ *
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
+ *
+ * For the full copyright and license information, please read the
+ * LICENSE file that was distributed with this source code.
+ */
+
 namespace Enhancely\Tests\Unit\Configuration;
 
 use Enhancely\Enhancely\Configuration\ExtensionConfiguration;
@@ -72,5 +83,23 @@ final class ExtensionConfigurationTest extends TestCase
     {
         $config = $this->createConfig(['cacheLifetime' => -5]);
         self::assertSame(86400, $config->getCacheLifetime());
+    }
+
+    #[Test]
+    public function getTimeoutReturnsConfiguredValue(): void
+    {
+        $config = $this->createConfig(['timeout' => 15]);
+        self::assertSame(15, $config->getTimeout());
+    }
+
+    /**
+     * null means "do not override" — TYPO3's global HTTP timeout stays in charge.
+     */
+    #[Test]
+    public function getTimeoutReturnsNullWhenUnset(): void
+    {
+        self::assertNull($this->createConfig([])->getTimeout());
+        self::assertNull($this->createConfig(['timeout' => 0])->getTimeout());
+        self::assertNull($this->createConfig(['timeout' => -1])->getTimeout());
     }
 }

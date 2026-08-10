@@ -2,23 +2,33 @@
 
 declare(strict_types=1);
 
+/*
+ * This file is part of the "enhancely" extension for TYPO3 CMS.
+ *
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
+ *
+ * For the full copyright and license information, please read the
+ * LICENSE file that was distributed with this source code.
+ */
+
 namespace Enhancely\Enhancely\Client;
 
-use Enhancely\Enhancely\Configuration\ExtensionConfiguration;
-use GuzzleHttp\Client as GuzzleClient;
+use Enhancely\Enhancely\Configuration\ExtensionConfigurationInterface;
+use TYPO3\CMS\Core\Http\RequestFactory;
 
 /**
  * Builds a configured HttpClient per request.
  *
- * Replaces the static Client::setApiKey()/setApiBaseUrl() facade for
- * server-side use. The static facade remains for direct library callers,
- * but the middleware injects this factory to avoid leaking state across
- * requests in long-running PHP runtimes (Swoole, RoadRunner, FrankenPHP).
+ * Request-scoped rather than a singleton so no API key or base URL leaks
+ * across requests in long-running PHP runtimes (Swoole, RoadRunner, FrankenPHP).
  */
 final class HttpClientFactory
 {
     public function __construct(
-        private readonly ExtensionConfiguration $configuration,
+        private readonly ExtensionConfigurationInterface $configuration,
+        private readonly RequestFactory $requestFactory,
     ) {}
 
     public function create(): HttpClientInterface
@@ -28,15 +38,11 @@ final class HttpClientFactory
             throw new \RuntimeException('Enhancely API key is not configured');
         }
 
-        $guzzle = new GuzzleClient([
-            // Explicit so a global Guzzle config override cannot disable TLS verification.
-            'verify' => true,
-        ]);
-
         return new HttpClient(
-            $guzzle,
+            $this->requestFactory,
             $apiKey,
             $this->configuration->getApiBaseUrl(),
+            $this->configuration->getTimeout(),
         );
     }
 }
