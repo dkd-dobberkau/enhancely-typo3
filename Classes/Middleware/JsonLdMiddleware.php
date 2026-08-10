@@ -2,28 +2,39 @@
 
 declare(strict_types=1);
 
+/*
+ * This file is part of the "enhancely" extension for TYPO3 CMS.
+ *
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
+ *
+ * For the full copyright and license information, please read the
+ * LICENSE file that was distributed with this source code.
+ */
+
 namespace Enhancely\Enhancely\Middleware;
 
+use Enhancely\Enhancely\Cache\JsonLdCache;
 use Enhancely\Enhancely\Client\Exception\ApiException;
 use Enhancely\Enhancely\Client\HttpClientFactory;
 use Enhancely\Enhancely\Client\JsonLdResponse;
 use Enhancely\Enhancely\Client\UrlNormalizer;
-use Enhancely\Enhancely\Configuration\ExtensionConfiguration;
+use Enhancely\Enhancely\Configuration\ExtensionConfigurationInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use Psr\Log\LoggerInterface;
-use TYPO3\CMS\Core\Cache\Frontend\FrontendInterface;
 use TYPO3\CMS\Core\Http\StreamFactory;
 use TYPO3\CMS\Frontend\Page\PageInformation;
 
 final class JsonLdMiddleware implements MiddlewareInterface
 {
     public function __construct(
-        private readonly ExtensionConfiguration $configuration,
+        private readonly ExtensionConfigurationInterface $configuration,
         private readonly HttpClientFactory $httpClientFactory,
-        private readonly FrontendInterface $cache,
+        private readonly JsonLdCache $cache,
         private readonly LoggerInterface $logger,
         private readonly StreamFactory $streamFactory,
     ) {}
@@ -81,10 +92,9 @@ final class JsonLdMiddleware implements MiddlewareInterface
     private function injectJsonLd(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
     {
         $url = (string)$request->getUri();
-        $cacheIdentifier = $this->getCacheIdentifier($url);
 
         // Get cached ETag
-        $cachedData = $this->cache->get($cacheIdentifier);
+        $cachedData = $this->cache->get($url);
         $cachedEtag = $cachedData['etag'] ?? null;
         $cachedJsonLd = $cachedData['jsonld'] ?? null;
 
@@ -106,9 +116,8 @@ final class JsonLdMiddleware implements MiddlewareInterface
                 $jsonLdScript = (string)$enhancelyResponse;
 
                 // Cache the new data
-                self::writeCachePayload(
-                    $this->cache,
-                    $cacheIdentifier,
+                $this->cache->write(
+                    $url,
                     $enhancelyResponse,
                     $this->configuration->getCacheLifetime()
                 );
@@ -141,48 +150,6 @@ final class JsonLdMiddleware implements MiddlewareInterface
             ]);
             return $response;
         }
-    }
-
-    /**
-     * Build and store the cache payload for one URL.
-     *
-     * Two layers in the payload:
-     *  - 'etag' + 'jsonld' — consumed by this middleware on subsequent FE
-     *    requests (conditional ETag handling).
-     *  - 'meta' — consumed by the BE info-module tab. Backwards compatible:
-     *    entries written by older versions lack the 'meta' key, and the BE
-     *    treats those as a cache miss.
-     */
-    public static function writeCachePayload(
-        FrontendInterface $cache,
-        string $cacheIdentifier,
-        JsonLdResponse $response,
-        int $lifetime
-    ): void {
-        $cache->set(
-            $cacheIdentifier,
-            [
-                'etag' => $response->etag(),
-                'jsonld' => (string)$response,
-                'meta' => [
-                    'crawled_at' => $response->crawledAt(),
-                    'status' => $response->apiStatus(),
-                    'hash' => $response->hash(),
-                    'graph' => $response->jsonld(),
-                    'cached_at' => time(),
-                ],
-            ],
-            ['pages'],
-            $lifetime
-        );
-    }
-
-    private function getCacheIdentifier(string $url): string
-    {
-        // Cache key must match the URL we send to the API; otherwise queries
-        // like ?utm_source=… create endless cache fragmentation while the API
-        // returns the same JSON-LD for the normalized URL.
-        return 'enhancely_' . md5(UrlNormalizer::normalize($url));
     }
 
     private function insertBeforeHeadClose(string $html, string $jsonLd): string

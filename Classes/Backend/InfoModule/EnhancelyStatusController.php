@@ -2,23 +2,37 @@
 
 declare(strict_types=1);
 
+/*
+ * This file is part of the "enhancely" extension for TYPO3 CMS.
+ *
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
+ *
+ * For the full copyright and license information, please read the
+ * LICENSE file that was distributed with this source code.
+ */
+
 namespace Enhancely\Enhancely\Backend\InfoModule;
 
 use Enhancely\Enhancely\Backend\SanityCheck\SanityChecker;
+use Enhancely\Enhancely\Cache\JsonLdCache;
 use Enhancely\Enhancely\Configuration\ExtensionConfigurationInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use TYPO3\CMS\Backend\Template\ModuleTemplateFactory;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
-use TYPO3\CMS\Core\Cache\Frontend\FrontendInterface;
 
 final class EnhancelyStatusController
 {
+    private const LLL = 'LLL:EXT:enhancely/Resources/Private/Language/locallang_mod.xlf:';
+
     public function __construct(
         private readonly ExtensionConfigurationInterface $config,
-        private readonly FrontendInterface $cache,
+        private readonly JsonLdCache $cache,
         private readonly SanityChecker $sanityChecker,
         private readonly UrlResolverInterface $urlResolver,
+        private readonly SiteTitleProviderInterface $siteTitleProvider,
         private readonly JsonLdFetcherInterface $fetcher,
         private readonly ModuleTemplateFactory $moduleTemplateFactory,
     ) {}
@@ -66,21 +80,22 @@ final class EnhancelyStatusController
         if ($this->config->getApiKey() === '') {
             return new ViewState(
                 banner: ViewState::BANNER_NOT_CONFIGURED,
-                bannerDetail: 'API key not configured.'
+                bannerDetailKey: self::LLL . 'banner.not_configured.detail'
             );
         }
 
         if (!$this->config->isEnabled()) {
             return new ViewState(
                 banner: ViewState::BANNER_DISABLED,
-                bannerDetail: 'Extension is disabled in Extension Configuration.'
+                bannerDetailKey: self::LLL . 'banner.disabled.detail'
             );
         }
 
         if (in_array($doktype, $this->config->getExcludedPageTypes(), true)) {
             return new ViewState(
                 statusBadge: 'skipped',
-                bannerDetail: sprintf('Doktype %d is excluded from Enhancely.', $doktype)
+                bannerDetailKey: self::LLL . 'banner.skipped.detail',
+                bannerDetailArguments: [(string)$doktype]
             );
         }
 
@@ -89,32 +104,29 @@ final class EnhancelyStatusController
         } catch (\RuntimeException $e) {
             return new ViewState(
                 banner: ViewState::BANNER_SITE_ERROR,
-                bannerDetail: $e->getMessage(),
+                bannerDetailKey: self::LLL . 'banner.site_error.detail',
+                bannerDetailArguments: [$e->getMessage()],
             );
         }
 
-        $expectedTitle = $this->urlResolver->expectedWebsiteTitle($pageUid);
-        $cacheId = $this->cacheIdentifier($url);
+        $expectedTitle = $this->siteTitleProvider->websiteTitle($pageUid);
 
         if ($forceRefresh) {
-            $this->cache->remove($cacheId);
+            $this->cache->remove($url);
         }
 
-        $cached = $this->cache->get($cacheId);
+        $cached = $this->cache->get($url);
 
-        if (is_array($cached) && isset($cached['meta']) && !$forceRefresh) {
+        if ($cached !== null && isset($cached['meta']) && !$forceRefresh) {
             return $this->stateFromCachedMeta($url, $cached, $expectedTitle);
         }
 
-        $response = $this->fetcher->fetch($url, $forceRefresh);
+        $response = $this->fetcher->fetch($url);
 
         if ($response->ready()) {
-            \Enhancely\Enhancely\Middleware\JsonLdMiddleware::writeCachePayload(
-                $this->cache,
-                $cacheId,
-                $response,
-                $this->config->getCacheLifetime()
-            );
+            // Same cache entry the frontend middleware reads, so a refresh here
+            // also serves the next frontend request.
+            $this->cache->write($url, $response, $this->config->getCacheLifetime());
             return $this->stateFromLiveResponse($url, $response, $expectedTitle);
         }
 
@@ -128,11 +140,6 @@ final class EnhancelyStatusController
             errorMessage: $response->error() ?? 'Unknown error',
             source: 'live'
         );
-    }
-
-    private function cacheIdentifier(string $url): string
-    {
-        return hash('sha256', $url);
     }
 
     private function stateFromCachedMeta(string $url, array $cached, string $expectedTitle): ViewState

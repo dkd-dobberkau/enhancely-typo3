@@ -2,10 +2,21 @@
 
 declare(strict_types=1);
 
+/*
+ * This file is part of the "enhancely" extension for TYPO3 CMS.
+ *
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
+ *
+ * For the full copyright and license information, please read the
+ * LICENSE file that was distributed with this source code.
+ */
+
 namespace Enhancely\Tests\Unit\Middleware;
 
+use Enhancely\Enhancely\Cache\JsonLdCache;
 use Enhancely\Enhancely\Client\HttpClientFactory;
-use Enhancely\Enhancely\Client\JsonLdResponse;
 use Enhancely\Enhancely\Configuration\ExtensionConfiguration;
 use Enhancely\Enhancely\Middleware\JsonLdMiddleware;
 use PHPUnit\Framework\Attributes\Test;
@@ -58,48 +69,12 @@ final class JsonLdMiddlewareTest extends TestCase
         $middleware = new JsonLdMiddleware(
             $configuration,
             $httpClientFactory,
-            $this->createMock(FrontendInterface::class),
+            new JsonLdCache($this->createMock(FrontendInterface::class)),
             $this->createMock(LoggerInterface::class),
             $this->createMock(StreamFactory::class),
         );
 
         // Response passes through unmodified; no injection happened.
         self::assertSame($response, $middleware->process($request, $handler));
-    }
-
-    #[Test]
-    public function cachedPayloadIncludesMetaBlock(): void
-    {
-        $apiResponse = JsonLdResponse::fromApiResponse(
-            200,
-            [
-                'jsonld' => ['@graph' => [['@type' => 'WebPage', 'name' => 'X']]],
-                'crawled_at' => '2026-05-18T12:32:15.410Z',
-                'status' => 'ready',
-                'hash' => 'abc123',
-            ],
-            'etag-xyz'
-        );
-
-        $cache = $this->createMock(FrontendInterface::class);
-        $captured = null;
-        $cache->expects(self::once())
-            ->method('set')
-            ->willReturnCallback(function ($id, $payload) use (&$captured): void {
-                $captured = $payload;
-            });
-
-        JsonLdMiddleware::writeCachePayload($cache, 'cache-id', $apiResponse, 86400);
-
-        self::assertSame('etag-xyz', $captured['etag']);
-        self::assertStringStartsWith('<script', $captured['jsonld']);
-        self::assertSame('2026-05-18T12:32:15.410Z', $captured['meta']['crawled_at']);
-        self::assertSame('ready', $captured['meta']['status']);
-        self::assertSame('abc123', $captured['meta']['hash']);
-        self::assertSame(
-            [['@type' => 'WebPage', 'name' => 'X']],
-            $captured['meta']['graph']['@graph']
-        );
-        self::assertIsInt($captured['meta']['cached_at']);
     }
 }

@@ -16,21 +16,21 @@
       <f:case value="not_configured">
         <f:be.infobox
           title="{f:translate(key:'LLL:EXT:enhancely/Resources/Private/Language/locallang_mod.xlf:banner.not_configured')}"
-          message="{state.bannerDetail}"
+          message="{f:translate(key: state.bannerDetailKey, arguments: state.bannerDetailArguments)}"
           state="{f:constant(name: 'TYPO3\CMS\Core\Type\ContextualFeedbackSeverity::WARNING')}"
         />
       </f:case>
       <f:case value="disabled">
         <f:be.infobox
           title="{f:translate(key:'LLL:EXT:enhancely/Resources/Private/Language/locallang_mod.xlf:banner.disabled')}"
-          message="{state.bannerDetail}"
+          message="{f:translate(key: state.bannerDetailKey, arguments: state.bannerDetailArguments)}"
           state="{f:constant(name: 'TYPO3\CMS\Core\Type\ContextualFeedbackSeverity::WARNING')}"
         />
       </f:case>
       <f:case value="site_error">
         <f:be.infobox
           title="{f:translate(key:'LLL:EXT:enhancely/Resources/Private/Language/locallang_mod.xlf:banner.site_error')}"
-          message="{state.bannerDetail}"
+          message="{f:translate(key: state.bannerDetailKey, arguments: state.bannerDetailArguments)}"
           state="{f:constant(name: 'TYPO3\CMS\Core\Type\ContextualFeedbackSeverity::ERROR')}"
         />
       </f:case>
