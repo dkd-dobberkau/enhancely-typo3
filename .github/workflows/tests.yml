@@ -52,8 +52,12 @@ jobs:
       - name: Install dependencies
         run: composer update --no-interaction --no-progress --prefer-dist
 
+      # One package per invocation: `composer show` takes [<package> [<version>]],
+      # so a second package name is parsed as a version constraint.
       - name: Show resolved versions
-        run: composer show typo3/cms-core guzzlehttp/guzzle
+        run: |
+          composer show typo3/cms-core
+          composer show guzzlehttp/guzzle
 
       - name: Lint PHP files
         run: find Classes Tests Configuration -name '*.php' -print0 | xargs -0 -n1 -P4 php -l
