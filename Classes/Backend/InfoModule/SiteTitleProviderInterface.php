@@ -15,10 +15,14 @@ declare(strict_types=1);
 
 namespace Enhancely\Enhancely\Backend\InfoModule;
 
-interface UrlResolverInterface
+interface SiteTitleProviderInterface
 {
     /**
-     * @throws \RuntimeException If page has no site or URL cannot be built.
+     * The websiteTitle configured for the site a page belongs to.
+     *
+     * Used by the sanity check that compares the API's WebSite name against
+     * what TYPO3 itself would render. Returns '' when unknown, which the
+     * check treats as "cannot compare" rather than "mismatch".
      */
-    public function resolve(int $pageUid, int $languageId): string;
+    public function websiteTitle(int $pageUid): string;
 }
