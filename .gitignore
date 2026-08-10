@@ -2,4 +2,5 @@
 /composer.lock
 /.phpunit.cache/
 /public/
+/var/
 /.superpowers/
