@@ -2,15 +2,35 @@
 
 declare(strict_types=1);
 
+/*
+ * This file is part of the "enhancely" extension for TYPO3 CMS.
+ *
+ * It is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License, either version 2
+ * of the License, or any later version.
+ *
+ * For the full copyright and license information, please read the
+ * LICENSE file that was distributed with this source code.
+ */
+
 namespace Enhancely\Enhancely\Client;
 
 use Enhancely\Enhancely\Client\Exception\ApiException;
-use GuzzleHttp\Client as GuzzleClient;
 use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\RequestOptions;
+use Psr\Http\Message\ResponseInterface;
+use TYPO3\CMS\Core\Http\RequestFactory;
 
 /**
  * HTTP client for Enhancely API communication.
+ *
+ * Requests go through TYPO3's RequestFactory rather than a self-built Guzzle
+ * client, so everything an administrator configures in
+ * $GLOBALS['TYPO3_CONF_VARS']['HTTP'] applies — most importantly proxy settings
+ * and the global timeout. A self-built client ignores all of it, which breaks
+ * every request on installations that reach the internet through a proxy.
+ *
+ * @see https://docs.typo3.org/permalink/t3coreapi:http-requests-to-external-sources
  */
 final class HttpClient implements HttpClientInterface
 {
@@ -20,10 +40,16 @@ final class HttpClient implements HttpClientInterface
 
     private readonly string $baseUrl;
 
+    /**
+     * @param int|null $timeout Overrides the global TYPO3 HTTP timeout when set
+     *                          via extension configuration; null leaves TYPO3's
+     *                          own value in charge.
+     */
     public function __construct(
-        private readonly GuzzleClient $guzzle,
+        private readonly RequestFactory $requestFactory,
         private readonly string $apiKey,
         string $baseUrl = self::DEFAULT_BASE_URL,
+        private readonly ?int $timeout = null,
     ) {
         $this->baseUrl = rtrim($baseUrl, '/');
     }
@@ -47,14 +73,27 @@ final class HttpClient implements HttpClientInterface
             $headers['If-None-Match'] = $etag;
         }
 
+        $options = [
+            RequestOptions::HEADERS => $headers,
+            RequestOptions::JSON => ['url' => $url],
+            RequestOptions::HTTP_ERRORS => false,
+            // Deliberately not delegated to TYPO3: this request carries the API
+            // key as a bearer token, so a global verify=false must not silently
+            // downgrade it. Everything else (proxy, timeout) comes from TYPO3.
+            RequestOptions::VERIFY => true,
+        ];
+
+        if ($this->timeout !== null) {
+            $options[RequestOptions::TIMEOUT] = $this->timeout;
+            $options[RequestOptions::CONNECT_TIMEOUT] = $this->timeout;
+        }
+
         try {
-            $response = $this->guzzle->post($this->baseUrl . self::ENDPOINT_JSONLD, [
-                RequestOptions::HEADERS => $headers,
-                RequestOptions::JSON => ['url' => $url],
-                RequestOptions::HTTP_ERRORS => false,
-                RequestOptions::TIMEOUT => 10,
-                RequestOptions::CONNECT_TIMEOUT => 5,
-            ]);
+            $response = $this->requestFactory->request(
+                $this->baseUrl . self::ENDPOINT_JSONLD,
+                'POST',
+                $options
+            );
 
             $statusCode = $response->getStatusCode();
             $responseEtag = $response->getHeaderLine('ETag') ?: null;
@@ -81,11 +120,8 @@ final class HttpClient implements HttpClientInterface
         }
     }
 
-    /**
-     * @return JsonLdResponse
-     */
     private function handleSuccessResponse(
-        \Psr\Http\Message\ResponseInterface $response,
+        ResponseInterface $response,
         ?string $etag
     ): JsonLdResponse {
         $body = $this->readBoundedBody($response);
@@ -104,7 +140,7 @@ final class HttpClient implements HttpClientInterface
      * Throws if Content-Length advertises more, or if the actual stream
      * exceeds the cap. Prevents OOM on a malicious or compromised endpoint.
      */
-    private function readBoundedBody(\Psr\Http\Message\ResponseInterface $response): string
+    private function readBoundedBody(ResponseInterface $response): string
     {
         $contentLength = $response->getHeaderLine('Content-Length');
         if ($contentLength !== '' && (int)$contentLength > self::MAX_RESPONSE_BYTES) {
@@ -134,7 +170,7 @@ final class HttpClient implements HttpClientInterface
      * @throws ApiException
      */
     private function handleErrorResponse(
-        \Psr\Http\Message\ResponseInterface $response,
+        ResponseInterface $response,
         int $statusCode
     ): never {
         $body = (string)$response->getBody();
