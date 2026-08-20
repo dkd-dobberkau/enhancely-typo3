@@ -35,6 +35,7 @@ final class EnhancelyStatusController
         private readonly JsonLdFetcherInterface $fetcher,
         private readonly ModuleTemplateFactory $moduleTemplateFactory,
         private readonly PageAccessCheckerInterface $pageAccessChecker,
+        private readonly RefreshTokenGuardInterface $refreshTokenGuard,
     ) {}
 
     public function __invoke(ServerRequestInterface $request): ResponseInterface
@@ -42,7 +43,7 @@ final class EnhancelyStatusController
         $params = $request->getQueryParams() + (array)$request->getParsedBody();
         $pageUid = (int)($params['id'] ?? 0);
         $languageId = (int)($params['language'] ?? 0);
-        $forceRefresh = !empty($params['forceRefresh']);
+        $forceRefresh = $this->refreshTokenGuard->isRefreshRequested($request);
 
         // The module is registered with `access => 'user'`, so anyone logged in
         // can reach this point with any page UID. Everything below changes
@@ -67,6 +68,7 @@ final class EnhancelyStatusController
         $moduleTemplate = $this->moduleTemplateFactory->create($request);
         $moduleTemplate->assign('state', $state);
         $moduleTemplate->assign('pageUid', $pageUid);
+        $moduleTemplate->assign('formToken', $this->refreshTokenGuard->generate($request));
 
         $moduleTemplate->setTitle('Enhancely JSON-LD', $pageInfo['title'] ?? '');
         if ($pageInfo !== null) {
@@ -117,13 +119,15 @@ final class EnhancelyStatusController
 
         $expectedTitle = $this->siteTitleProvider->websiteTitle($pageUid);
 
-        if ($forceRefresh) {
-            $this->cache->remove($url);
-        }
+        // A refresh skips reading the cache but must not clear it up front: the
+        // API can answer "processing" or fail, and dropping the entry first
+        // would leave the frontend middleware with a cache miss on every
+        // subsequent page view — turning a transient API outage into sustained
+        // billed traffic. write() replaces the entry anyway, so the old value
+        // only goes once a new one is in hand.
+        $cached = $forceRefresh ? null : $this->cache->get($url);
 
-        $cached = $this->cache->get($url);
-
-        if ($cached !== null && isset($cached['meta']) && !$forceRefresh) {
+        if ($cached !== null && isset($cached['meta'])) {
             return $this->stateFromCachedMeta($url, $cached, $expectedTitle);
         }
 
