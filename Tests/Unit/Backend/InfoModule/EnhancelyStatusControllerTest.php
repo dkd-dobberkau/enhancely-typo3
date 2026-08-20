@@ -16,12 +16,17 @@ declare(strict_types=1);
 namespace Enhancely\Tests\Unit\Backend\InfoModule;
 
 use Enhancely\Enhancely\Backend\InfoModule\EnhancelyStatusController;
+use Enhancely\Enhancely\Backend\InfoModule\PageAccessCheckerInterface;
 use Enhancely\Enhancely\Backend\InfoModule\ViewState;
 use Enhancely\Enhancely\Backend\SanityCheck\SanityChecker;
 use Enhancely\Enhancely\Cache\JsonLdCache;
 use Enhancely\Enhancely\Configuration\ExtensionConfigurationInterface;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
+use TYPO3\CMS\Backend\Template\Components\DocHeaderComponent;
+use TYPO3\CMS\Backend\Template\ModuleTemplate;
 use TYPO3\CMS\Backend\Template\ModuleTemplateFactory;
 use TYPO3\CMS\Core\Cache\Frontend\FrontendInterface;
 
@@ -34,6 +39,7 @@ final class EnhancelyStatusControllerTest extends TestCase
         ?\Enhancely\Enhancely\Backend\InfoModule\JsonLdFetcherInterface $fetcher = null,
         ?ModuleTemplateFactory $moduleTemplateFactory = null,
         ?\Enhancely\Enhancely\Backend\InfoModule\SiteTitleProviderInterface $siteTitleProvider = null,
+        ?PageAccessCheckerInterface $pageAccessChecker = null,
     ): EnhancelyStatusController {
         if ($resolver === null) {
             $resolver = $this->createMock(\Enhancely\Enhancely\Backend\InfoModule\UrlResolverInterface::class);
@@ -50,7 +56,54 @@ final class EnhancelyStatusControllerTest extends TestCase
             $siteTitleProvider ?? $this->siteTitleProviderMock(),
             $fetcher,
             $moduleTemplateFactory ?? $this->createMock(ModuleTemplateFactory::class),
+            $pageAccessChecker ?? $this->pageAccessCheckerMock(),
         );
+    }
+
+    /**
+     * @param array<string, mixed>|null $pageInfo Null denies access to every page.
+     */
+    private function pageAccessCheckerMock(?array $pageInfo = ['uid' => 1, 'title' => 'Some page']): PageAccessCheckerInterface
+    {
+        $m = $this->createMock(PageAccessCheckerInterface::class);
+        $m->method('readablePageInfo')->willReturn($pageInfo);
+        return $m;
+    }
+
+    /**
+     * A ModuleTemplate whose assign() calls are recorded, so a test can inspect
+     * the ViewState the controller handed to the view.
+     *
+     * @param array<string, mixed> $assigned Populated by reference.
+     */
+    private function moduleTemplateFactoryMock(array &$assigned): ModuleTemplateFactory
+    {
+        $moduleTemplate = $this->createMock(ModuleTemplate::class);
+        $moduleTemplate->method('assign')->willReturnCallback(
+            function (string $key, mixed $value) use (&$assigned, $moduleTemplate): ModuleTemplate {
+                $assigned[$key] = $value;
+                return $moduleTemplate;
+            }
+        );
+        $moduleTemplate->method('setTitle')->willReturn($moduleTemplate);
+        $moduleTemplate->method('makeDocHeaderModuleMenu')->willReturn($moduleTemplate);
+        $moduleTemplate->method('getDocHeaderComponent')->willReturn($this->createMock(DocHeaderComponent::class));
+        $moduleTemplate->method('renderResponse')->willReturn($this->createMock(ResponseInterface::class));
+
+        $factory = $this->createMock(ModuleTemplateFactory::class);
+        $factory->method('create')->willReturn($moduleTemplate);
+        return $factory;
+    }
+
+    /**
+     * @param array<string, mixed> $queryParams
+     */
+    private function requestMock(array $queryParams): ServerRequestInterface
+    {
+        $request = $this->createMock(ServerRequestInterface::class);
+        $request->method('getQueryParams')->willReturn($queryParams);
+        $request->method('getParsedBody')->willReturn(null);
+        return $request;
     }
 
     private function urlResolverMock(string $url = 'https://example.com/'): \Enhancely\Enhancely\Backend\InfoModule\UrlResolverInterface
@@ -242,5 +295,140 @@ final class EnhancelyStatusControllerTest extends TestCase
         $state = $controller->buildViewState(1, 0, 1, false);
 
         self::assertStringContainsString('live', $state->source);
+    }
+
+    /**
+     * The module is registered with `access => 'user'`, so reaching the
+     * controller says nothing about which pages the user may read. Every
+     * state-changing step — resolving the URL, purging the cache shared with
+     * the frontend middleware, and the billed API call — must stay behind the
+     * page-read gate, not just the rendered output.
+     */
+    #[Test]
+    public function deniedPageAccessPerformsNoStateChangingWork(): void
+    {
+        $cache = $this->createMock(FrontendInterface::class);
+        $cache->expects(self::never())->method('remove');
+        $cache->expects(self::never())->method('set');
+
+        $resolver = $this->createMock(\Enhancely\Enhancely\Backend\InfoModule\UrlResolverInterface::class);
+        $resolver->expects(self::never())->method('resolve');
+
+        $fetcher = $this->createMock(\Enhancely\Enhancely\Backend\InfoModule\JsonLdFetcherInterface::class);
+        $fetcher->expects(self::never())->method('fetch');
+
+        $assigned = [];
+        $controller = $this->controllerWith(
+            $this->configMock(),
+            $cache,
+            $resolver,
+            $fetcher,
+            $this->moduleTemplateFactoryMock($assigned),
+            null,
+            $this->pageAccessCheckerMock(null),
+        );
+
+        $controller->__invoke($this->requestMock(['id' => 4711, 'forceRefresh' => 1]));
+
+        self::assertInstanceOf(ViewState::class, $assigned['state']);
+        self::assertSame(ViewState::BANNER_ACCESS_DENIED, $assigned['state']->banner);
+    }
+
+    #[Test]
+    public function accessDeniedBannerDetailIsALanguageKey(): void
+    {
+        $assigned = [];
+        $controller = $this->controllerWith(
+            $this->configMock(),
+            null,
+            null,
+            null,
+            $this->moduleTemplateFactoryMock($assigned),
+            null,
+            $this->pageAccessCheckerMock(null),
+        );
+
+        $controller->__invoke($this->requestMock(['id' => 4711]));
+
+        self::assertStringStartsWith('LLL:EXT:enhancely/', $assigned['state']->bannerDetailKey);
+    }
+
+    #[Test]
+    public function grantedPageAccessStillRefreshes(): void
+    {
+        $cache = $this->createMock(FrontendInterface::class);
+        $cache->expects(self::once())->method('remove');
+
+        $response = \Enhancely\Enhancely\Client\JsonLdResponse::fromApiResponse(200, [
+            'jsonld' => ['@graph' => []],
+            'status' => 'ready',
+        ], 'etag-fresh');
+
+        $fetcher = $this->createMock(\Enhancely\Enhancely\Backend\InfoModule\JsonLdFetcherInterface::class);
+        $fetcher->expects(self::once())->method('fetch')->willReturn($response);
+
+        $assigned = [];
+        $controller = $this->controllerWith(
+            $this->configMock(),
+            $cache,
+            $this->urlResolverMock(),
+            $fetcher,
+            $this->moduleTemplateFactoryMock($assigned),
+        );
+
+        $controller->__invoke($this->requestMock(['id' => 4711, 'forceRefresh' => 1]));
+
+        self::assertSame(ViewState::BANNER_NONE, $assigned['state']->banner);
+        self::assertSame('ready', $assigned['state']->statusBadge);
+    }
+
+    /**
+     * The doktype comes out of the record readPageAccess() already selected,
+     * so excluded page types must still be honoured without a second query.
+     */
+    #[Test]
+    public function excludedDoktypeIsReadFromTheAuthorizedPageRecord(): void
+    {
+        $fetcher = $this->createMock(\Enhancely\Enhancely\Backend\InfoModule\JsonLdFetcherInterface::class);
+        $fetcher->expects(self::never())->method('fetch');
+
+        $assigned = [];
+        $controller = $this->controllerWith(
+            $this->configMock(excluded: [404]),
+            null,
+            null,
+            $fetcher,
+            $this->moduleTemplateFactoryMock($assigned),
+            null,
+            $this->pageAccessCheckerMock(['uid' => 4711, 'title' => 'Gone', 'doktype' => 404]),
+        );
+
+        $controller->__invoke($this->requestMock(['id' => 4711]));
+
+        self::assertSame('skipped', $assigned['state']->statusBadge);
+    }
+
+    /**
+     * With no page selected there is nothing to authorize; the template shows
+     * its "pick a page" hint instead of an access error.
+     */
+    #[Test]
+    public function noPageSelectedIsNotTreatedAsAccessDenial(): void
+    {
+        $assigned = [];
+        $controller = $this->controllerWith(
+            $this->configMock(),
+            null,
+            null,
+            null,
+            $this->moduleTemplateFactoryMock($assigned),
+            null,
+            $this->pageAccessCheckerMock(null),
+        );
+
+        $controller->__invoke($this->requestMock(['id' => 0]));
+
+        self::assertSame(0, $assigned['pageUid']);
+        self::assertNotSame(ViewState::BANNER_ACCESS_DENIED, $assigned['state']->banner);
     }
 }

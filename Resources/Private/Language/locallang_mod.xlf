@@ -10,10 +10,12 @@
       <trans-unit id="banner.not_configured"><source>Extension is not configured. Set the API key in Admin Tools › Settings › Extension Configuration › enhancely.</source></trans-unit>
       <trans-unit id="banner.disabled"><source>Extension is disabled. Enable it in Extension Configuration.</source></trans-unit>
       <trans-unit id="banner.site_error"><source>Cannot resolve the public URL for this page:</source></trans-unit>
+      <trans-unit id="banner.access_denied"><source>No access to this page</source></trans-unit>
       <trans-unit id="banner.not_configured.detail"><source>API key not configured.</source></trans-unit>
       <trans-unit id="banner.disabled.detail"><source>Extension is disabled in Extension Configuration.</source></trans-unit>
       <trans-unit id="banner.skipped.detail"><source>Doktype %1$s is excluded from Enhancely.</source></trans-unit>
       <trans-unit id="banner.site_error.detail"><source>%1$s</source></trans-unit>
+      <trans-unit id="banner.access_denied.detail"><source>You do not have read access to page %1$s.</source></trans-unit>
       <trans-unit id="badge.ready"><source>ready</source></trans-unit>
       <trans-unit id="badge.processing"><source>processing</source></trans-unit>
       <trans-unit id="badge.error"><source>error</source></trans-unit>
