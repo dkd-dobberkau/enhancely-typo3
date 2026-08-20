@@ -21,7 +21,6 @@ use Enhancely\Enhancely\Configuration\ExtensionConfigurationInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use TYPO3\CMS\Backend\Template\ModuleTemplateFactory;
-use TYPO3\CMS\Backend\Utility\BackendUtility;
 
 final class EnhancelyStatusController
 {
@@ -35,6 +34,7 @@ final class EnhancelyStatusController
         private readonly SiteTitleProviderInterface $siteTitleProvider,
         private readonly JsonLdFetcherInterface $fetcher,
         private readonly ModuleTemplateFactory $moduleTemplateFactory,
+        private readonly PageAccessCheckerInterface $pageAccessChecker,
     ) {}
 
     public function __invoke(ServerRequestInterface $request): ResponseInterface
@@ -44,31 +44,37 @@ final class EnhancelyStatusController
         $languageId = (int)($params['language'] ?? 0);
         $forceRefresh = !empty($params['forceRefresh']);
 
-        $doktype = $this->resolveDoktype($pageUid);
+        // The module is registered with `access => 'user'`, so anyone logged in
+        // can reach this point with any page UID. Everything below changes
+        // state a page-read gate is supposed to protect: it purges the cache
+        // entry the frontend middleware reads and spends billed API quota. So
+        // the gate runs first, and nothing happens without it.
+        $pageInfo = $this->pageAccessChecker->readablePageInfo($pageUid);
 
-        $state = $this->buildViewState($pageUid, $languageId, $doktype, $forceRefresh);
+        if ($pageUid > 0 && $pageInfo === null) {
+            $state = new ViewState(
+                banner: ViewState::BANNER_ACCESS_DENIED,
+                bannerDetailKey: self::LLL . 'banner.access_denied.detail',
+                bannerDetailArguments: [(string)$pageUid],
+            );
+        } else {
+            // readPageAccess() selects the full page row, so the doktype comes
+            // out of the record we just authorized instead of a second query.
+            $doktype = (int)($pageInfo['doktype'] ?? 0);
+            $state = $this->buildViewState($pageUid, $languageId, $doktype, $forceRefresh);
+        }
 
         $moduleTemplate = $this->moduleTemplateFactory->create($request);
         $moduleTemplate->assign('state', $state);
         $moduleTemplate->assign('pageUid', $pageUid);
 
-        $pageInfo = $pageUid > 0 ? (BackendUtility::readPageAccess($pageUid, '1=1') ?: []) : [];
         $moduleTemplate->setTitle('Enhancely JSON-LD', $pageInfo['title'] ?? '');
-        if ($pageInfo !== []) {
+        if ($pageInfo !== null) {
             $moduleTemplate->getDocHeaderComponent()->setMetaInformation($pageInfo);
         }
         $moduleTemplate->makeDocHeaderModuleMenu(['id' => $pageUid]);
 
         return $moduleTemplate->renderResponse('Backend/InfoModule/Show');
-    }
-
-    private function resolveDoktype(int $pageUid): int
-    {
-        if ($pageUid <= 0) {
-            return 0;
-        }
-        $row = BackendUtility::getRecord('pages', $pageUid, 'doktype');
-        return (int)($row['doktype'] ?? 0);
     }
 
     public function buildViewState(

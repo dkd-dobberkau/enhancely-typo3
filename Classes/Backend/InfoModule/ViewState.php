@@ -23,6 +23,7 @@ final class ViewState
     public const BANNER_NOT_CONFIGURED = 'not_configured';
     public const BANNER_DISABLED = 'disabled';
     public const BANNER_SITE_ERROR = 'site_error';
+    public const BANNER_ACCESS_DENIED = 'access_denied';
 
     /**
      * @param string $bannerDetailKey Full LLL key of the detail message; the

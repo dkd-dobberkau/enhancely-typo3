@@ -37,7 +37,11 @@ services:
   Enhancely\Enhancely\Backend\InfoModule\SiteTitleProvider:
     public: true
 
+  Enhancely\Enhancely\Backend\InfoModule\PageAccessChecker:
+    public: true
+
   Enhancely\Enhancely\Backend\InfoModule\JsonLdFetcherInterface: '@Enhancely\Enhancely\Backend\InfoModule\JsonLdFetcher'
   Enhancely\Enhancely\Backend\InfoModule\UrlResolverInterface: '@Enhancely\Enhancely\Backend\InfoModule\UrlResolver'
   Enhancely\Enhancely\Backend\InfoModule\SiteTitleProviderInterface: '@Enhancely\Enhancely\Backend\InfoModule\SiteTitleProvider'
+  Enhancely\Enhancely\Backend\InfoModule\PageAccessCheckerInterface: '@Enhancely\Enhancely\Backend\InfoModule\PageAccessChecker'
   Enhancely\Enhancely\Configuration\ExtensionConfigurationInterface: '@Enhancely\Enhancely\Configuration\ExtensionConfiguration'

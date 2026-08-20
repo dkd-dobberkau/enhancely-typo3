@@ -5,6 +5,30 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+Result of the automated security audit (Redmine #249782).
+
+### Security
+
+- The Info module now checks page-read permission **before** it does any work.
+  Previously the module resolved the URL, purged the JSON-LD cache entry shared
+  with the frontend middleware and issued a billed Enhancely API call for any
+  page UID passed in `id`, and only afterwards called `readPageAccess()` — whose
+  result was used for the doc header alone. Any backend user with the module
+  enabled could therefore purge cache entries and burn API quota for pages
+  outside their mounts by iterating `id`, with `forceRefresh` accepted from GET.
+  The check now uses the user's real SHOW permissions
+  (`getPagePermsClause(Permission::PAGE_SHOW)`) instead of the literal `1=1`,
+  and pages without access render an "access denied" banner.
+
+### Changed
+
+- The page doktype is read from the record `readPageAccess()` already selected
+  instead of a second unguarded `BackendUtility::getRecord()` query.
+- `BackendUtility::readPageAccess()` moved behind `PageAccessCheckerInterface`,
+  so the controller entry point is unit-testable.
+
 ## [1.5.0] - 2026-08-10
 
 Result of the internal dkd code review (Redmine #245854).
