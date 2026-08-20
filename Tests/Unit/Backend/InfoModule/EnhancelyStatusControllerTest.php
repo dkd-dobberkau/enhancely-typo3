@@ -17,6 +17,7 @@ namespace Enhancely\Tests\Unit\Backend\InfoModule;
 
 use Enhancely\Enhancely\Backend\InfoModule\EnhancelyStatusController;
 use Enhancely\Enhancely\Backend\InfoModule\PageAccessCheckerInterface;
+use Enhancely\Enhancely\Backend\InfoModule\RefreshTokenGuardInterface;
 use Enhancely\Enhancely\Backend\InfoModule\ViewState;
 use Enhancely\Enhancely\Backend\SanityCheck\SanityChecker;
 use Enhancely\Enhancely\Cache\JsonLdCache;
@@ -40,6 +41,7 @@ final class EnhancelyStatusControllerTest extends TestCase
         ?ModuleTemplateFactory $moduleTemplateFactory = null,
         ?\Enhancely\Enhancely\Backend\InfoModule\SiteTitleProviderInterface $siteTitleProvider = null,
         ?PageAccessCheckerInterface $pageAccessChecker = null,
+        ?RefreshTokenGuardInterface $refreshTokenGuard = null,
     ): EnhancelyStatusController {
         if ($resolver === null) {
             $resolver = $this->createMock(\Enhancely\Enhancely\Backend\InfoModule\UrlResolverInterface::class);
@@ -57,7 +59,20 @@ final class EnhancelyStatusControllerTest extends TestCase
             $fetcher,
             $moduleTemplateFactory ?? $this->createMock(ModuleTemplateFactory::class),
             $pageAccessChecker ?? $this->pageAccessCheckerMock(),
+            $refreshTokenGuard ?? $this->refreshTokenGuardMock(),
         );
+    }
+
+    /**
+     * @param bool $refreshRequested What the guard reports for the request —
+     *        false stands for a missing or invalid token, or a GET.
+     */
+    private function refreshTokenGuardMock(bool $refreshRequested = false): RefreshTokenGuardInterface
+    {
+        $m = $this->createMock(RefreshTokenGuardInterface::class);
+        $m->method('isRefreshRequested')->willReturn($refreshRequested);
+        $m->method('generate')->willReturn('token-123');
+        return $m;
     }
 
     /**
@@ -256,8 +271,10 @@ final class EnhancelyStatusControllerTest extends TestCase
     public function forceRefreshSkipsCacheAndFetches(): void
     {
         $cache = $this->createMock(FrontendInterface::class);
-        // Cache has data but forceRefresh should bypass it.
-        $cache->expects(self::once())->method('remove')->with(self::isType('string'));
+        // Cache has data but forceRefresh should bypass reading it — without
+        // deleting it, so a failed refresh cannot lose the entry.
+        $cache->expects(self::never())->method('get');
+        $cache->expects(self::never())->method('remove');
 
         $response = \Enhancely\Enhancely\Client\JsonLdResponse::fromApiResponse(200, [
             'jsonld' => ['@graph' => []],
@@ -269,7 +286,53 @@ final class EnhancelyStatusControllerTest extends TestCase
 
         $controller = $this->controllerWith($this->configMock(), $cache, $this->urlResolverMock(), $fetcher);
 
-        $controller->buildViewState(1, 0, 1, forceRefresh: true);
+        $state = $controller->buildViewState(1, 0, 1, forceRefresh: true);
+
+        self::assertStringContainsString('live', $state->source);
+    }
+
+    /**
+     * The entry is the one the frontend middleware reads on every page view.
+     * Clearing it before the API has answered turns a transient outage into a
+     * permanent cache miss, so a refresh that does not come back ready must
+     * leave the previous value in place.
+     */
+    #[Test]
+    public function failedRefreshLeavesTheExistingCacheEntryIntact(): void
+    {
+        $cache = $this->createMock(FrontendInterface::class);
+        $cache->expects(self::never())->method('remove');
+        $cache->expects(self::never())->method('set');
+
+        $fetcher = $this->createMock(\Enhancely\Enhancely\Backend\InfoModule\JsonLdFetcherInterface::class);
+        $fetcher->method('fetch')->willReturn(
+            \Enhancely\Enhancely\Client\JsonLdResponse::createError('API unreachable')
+        );
+
+        $controller = $this->controllerWith($this->configMock(), $cache, $this->urlResolverMock(), $fetcher);
+
+        $state = $controller->buildViewState(1, 0, 1, forceRefresh: true);
+
+        self::assertSame('error', $state->statusBadge);
+    }
+
+    #[Test]
+    public function refreshStillProcessingLeavesTheExistingCacheEntryIntact(): void
+    {
+        $cache = $this->createMock(FrontendInterface::class);
+        $cache->expects(self::never())->method('remove');
+        $cache->expects(self::never())->method('set');
+
+        $fetcher = $this->createMock(\Enhancely\Enhancely\Backend\InfoModule\JsonLdFetcherInterface::class);
+        $fetcher->method('fetch')->willReturn(
+            \Enhancely\Enhancely\Client\JsonLdResponse::fromApiResponse(202, ['status' => 'processing'], null)
+        );
+
+        $controller = $this->controllerWith($this->configMock(), $cache, $this->urlResolverMock(), $fetcher);
+
+        $state = $controller->buildViewState(1, 0, 1, forceRefresh: true);
+
+        self::assertSame('processing', $state->statusBadge);
     }
 
     #[Test]
@@ -356,9 +419,6 @@ final class EnhancelyStatusControllerTest extends TestCase
     #[Test]
     public function grantedPageAccessStillRefreshes(): void
     {
-        $cache = $this->createMock(FrontendInterface::class);
-        $cache->expects(self::once())->method('remove');
-
         $response = \Enhancely\Enhancely\Client\JsonLdResponse::fromApiResponse(200, [
             'jsonld' => ['@graph' => []],
             'status' => 'ready',
@@ -370,16 +430,76 @@ final class EnhancelyStatusControllerTest extends TestCase
         $assigned = [];
         $controller = $this->controllerWith(
             $this->configMock(),
+            null,
+            $this->urlResolverMock(),
+            $fetcher,
+            $this->moduleTemplateFactoryMock($assigned),
+            null,
+            null,
+            $this->refreshTokenGuardMock(refreshRequested: true),
+        );
+
+        $controller->__invoke($this->requestMock(['id' => 4711]));
+
+        self::assertSame(ViewState::BANNER_NONE, $assigned['state']->banner);
+        self::assertSame('ready', $assigned['state']->statusBadge);
+    }
+
+    /**
+     * Without a valid token the request is an ordinary view, so a populated
+     * cache is served and no billed API call happens. This is what stops a
+     * cross-site form post — or a plain link — from spending API quota.
+     */
+    #[Test]
+    public function refreshWithoutValidTokenFallsBackToTheCache(): void
+    {
+        $cache = $this->createMock(FrontendInterface::class);
+        $cache->method('get')->willReturn([
+            'etag' => 'etag-abc',
+            'meta' => [
+                'status' => 'ready',
+                'hash' => 'h1',
+                'graph' => ['@graph' => []],
+                'cached_at' => time(),
+            ],
+        ]);
+        $cache->expects(self::never())->method('remove');
+
+        $fetcher = $this->createMock(\Enhancely\Enhancely\Backend\InfoModule\JsonLdFetcherInterface::class);
+        $fetcher->expects(self::never())->method('fetch');
+
+        $assigned = [];
+        $controller = $this->controllerWith(
+            $this->configMock(),
             $cache,
             $this->urlResolverMock(),
             $fetcher,
             $this->moduleTemplateFactoryMock($assigned),
+            null,
+            null,
+            $this->refreshTokenGuardMock(refreshRequested: false),
         );
 
         $controller->__invoke($this->requestMock(['id' => 4711, 'forceRefresh' => 1]));
 
-        self::assertSame(ViewState::BANNER_NONE, $assigned['state']->banner);
-        self::assertSame('ready', $assigned['state']->statusBadge);
+        self::assertStringContainsString('cache', $assigned['state']->source);
+    }
+
+    #[Test]
+    public function formTokenIsHandedToTheTemplate(): void
+    {
+        $assigned = [];
+        $controller = $this->controllerWith(
+            $this->configMock(),
+            null,
+            null,
+            null,
+            $this->moduleTemplateFactoryMock($assigned),
+        );
+
+        $controller->__invoke($this->requestMock(['id' => 4711]));
+
+        self::assertSame('token-123', $assigned['formToken']);
     }
 
     /**

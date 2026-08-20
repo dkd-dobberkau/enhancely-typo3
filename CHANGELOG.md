@@ -22,6 +22,19 @@ Result of the automated security audit (Redmine #249782).
   (`getPagePermsClause(Permission::PAGE_SHOW)`) instead of the literal `1=1`,
   and pages without access render an "access denied" banner.
 
+- The refresh action is no longer accepted from the query string and now
+  requires a FormProtection token. `forceRefresh=1` used to work as a plain GET
+  parameter, so a link or an `<img src>` on any page an editor opened could
+  trigger a cache purge and a billed API call; the POST form carried no token
+  either. TYPO3 does not verify request tokens for backend routes on its own,
+  so the module now carries its own, the way core backend modules do.
+
+- A refresh no longer deletes the cache entry before the API has answered.
+  The entry is the one the frontend middleware reads on every page view, and
+  clearing it up front meant a "processing" or failed response left it gone for
+  good — every subsequent visitor caused a fresh billed API call until it was
+  repopulated. The entry is now only replaced once a ready response is in hand.
+
 ### Changed
 
 - The page doktype is read from the record `readPageAccess()` already selected
