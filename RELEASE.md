@@ -101,60 +101,44 @@ is published to:
 
 1. [Packagist](https://packagist.org/packages/enhancely/enhancely-for-typo3)
    (Composer)
-2. [TER](https://extensions.typo3.org/package/enhancely/enhancely-for-typo3)
-   (TYPO3 Extension Repository)
+2. [extensions.typo3.org](https://extensions.typo3.org/package/enhancely/enhancely-for-typo3)
+   (the TER listing, mirrored from Packagist)
 3. [GitHub Releases](https://github.com/dkd-dobberkau/enhancely-typo3/releases)
 
-## TER publishing — two paths
+## Distribution channels
 
-The Composer/Packagist + GitHub Release flow is fully automated. The TER
-upload has **two paths**; pick whichever fits the credential ownership:
-
-### Path A — Automated via GitHub Action (token in repo secrets)
-
-Used when the TER token can live in this repository's secrets.
-
-| Secret name             | Source                                                                              |
-|-------------------------|-------------------------------------------------------------------------------------|
-| `TYPO3_API_USERNAME`    | typo3.org login of an account that owns the extension key `enhancely`               |
-| `TYPO3_API_TOKEN`       | <https://extensions.typo3.org/> → *My Account → Access Tokens → Create* (scopes: `extension:read,extension:write`) |
-
-Set at: **Repo → Settings → Secrets and variables → Actions → New repository secret**.
-
-When both secrets are present, `.github/workflows/publish-ter.yml` runs on
-every semver tag push and uploads automatically. When they are absent, the
-workflow skips the upload step gracefully (no red X).
-
-### Path B — Manual upload by the token owner (current setup)
-
-Used when the TER token stays with the customer / extension-key owner. After
-we push the git tag, the customer runs:
-
-```bash
-# Once: install Tailor globally
-composer global require typo3/tailor
-
-# Per release:
-git clone https://github.com/dkd-dobberkau/enhancely-typo3.git
-cd enhancely-typo3
-git checkout 1.2.3                                # or whatever was just tagged
-
-export TYPO3_API_USERNAME='<typo3.org-username>'
-export TYPO3_API_TOKEN='<token-from-extensions.typo3.org>'
-
-~/.composer/vendor/bin/tailor ter:publish \
-  --comment "Security release: XSS hardening, HTTPS enforcement, response size limit" \
-  1.2.3
-```
-
-The tag and the source on GitHub are immutable, so the customer can run this
-at any time after the tag has been pushed — there is no race window.
+Nothing has to be done per release beyond pushing the tag — all three channels
+follow the git tag on their own.
 
 ### Packagist
 
-Already wired: <https://packagist.org/packages/enhancely/enhancely-for-typo3>.
-A GitHub service hook syncs new tags automatically — no manual action needed
-per release.
+Wired via GitHub service hook:
+<https://packagist.org/packages/enhancely/enhancely-for-typo3>. New tags appear
+within seconds.
+
+### extensions.typo3.org (TER)
+
+The extension is listed as a **Composer package**, not under a classic extension
+key: <https://extensions.typo3.org/package/enhancely/enhancely-for-typo3>
+
+TER mirrors Composer packages of type `typo3-cms-extension` from Packagist, and
+the sync runs by itself — 1.5.0 showed up there roughly 50 minutes after its
+Packagist release. No token, no upload step, no `typo3/tailor`.
+
+The extension-key URL <https://extensions.typo3.org/extension/enhancely> returns
+**404**, and that is expected: no classic key was ever registered, and none is
+needed. Do not read that 404 as "the extension is missing from TER" — check the
+`/package/` URL above instead.
+
+A `.github/workflows/publish-ter.yml` used to upload via `typo3/tailor` with
+`TYPO3_API_USERNAME` / `TYPO3_API_TOKEN`. It never actually ran — the secrets
+were never set — and it was removed in September 2026, because that upload path
+does not apply to a Composer-only package. It is in the git history should a
+classic extension key ever be registered.
+
+### GitHub Releases
+
+Created by `release.sh`, see below.
 
 ## Releasing a new version
 
@@ -176,8 +160,8 @@ per release.
 The tag push automatically triggers:
 
 - **Packagist** — picks up the new version via webhook within seconds.
-- **`.github/workflows/publish-ter.yml`** — uploads the tagged source to TER
-  (requires the secrets from the prerequisites section).
+- **extensions.typo3.org** — mirrors the new Packagist version, typically within
+  the hour. Nothing runs in this repository for it.
 
 ## Verifying a release
 
@@ -189,12 +173,9 @@ composer show enhancely/enhancely-for-typo3 --all | grep '^versions'
 open "https://extensions.typo3.org/package/enhancely/enhancely-for-typo3"
 ```
 
-The TER upload shows up in the Actions tab of the repository as
-"Publish to TER". If it fails, the most common causes are:
+Packagist reflects the tag within seconds. The TER listing lags behind it by up
+to about an hour. If it has not appeared after that, the cause is on the
+Packagist side — there is no TER upload step in this repository that could fail.
 
-- Secrets not set or expired token.
-- TER rejects the version because `ext_emconf.php` version does not match the
-  git tag — `release.sh` keeps these in sync, so this should not happen unless
-  the working tree was edited between bump and tag.
-- The first upload of a brand-new extension key cannot be done by the API and
-  must be done once via the web UI; subsequent uploads via API work.
+`release.sh` keeps the git tag and the `'version'` in `ext_emconf.php` in sync;
+if those two ever diverge, the working tree was edited between bump and tag.

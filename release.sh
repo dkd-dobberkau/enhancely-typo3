@@ -101,5 +101,5 @@ echo "  - GitHub:    https://github.com/dkd-dobberkau/enhancely-typo3/releases/t
 echo "  - Packagist: https://packagist.org/packages/enhancely/enhancely-for-typo3#$VERSION"
 echo "  - TER:       https://extensions.typo3.org/package/enhancely/enhancely-for-typo3"
 echo ""
-info "TER upload runs automatically via .github/workflows/publish-ter.yml"
-info "Watch: https://github.com/dkd-dobberkau/enhancely-typo3/actions"
+info "extensions.typo3.org mirrors the new version from Packagist, usually within the hour."
+info "Nothing runs in this repository for it - see RELEASE.md."
