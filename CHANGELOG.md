@@ -5,6 +5,29 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.2] - 2026-09-21
+
+### Fixed
+
+- The Guzzle constraint now allows version 8 (`^7.5.1 || ^8.0`). TYPO3 Core
+  v14.3.7 widened its own constraint to `^7.15.2 || ^8.0`, so a fresh
+  `typo3/cms-base-distribution:^14` locks `guzzlehttp/guzzle` at 8.2.0.
+  Installing this extension into such a distribution failed, because
+  `composer require` is a partial update and may not downgrade a locked
+  package:
+
+  ```
+  - enhancely/enhancely-for-typo3[1.5.0, ..., 1.5.1] require guzzlehttp/guzzle
+    ^7.5.1 -> found guzzlehttp/guzzle[7.5.1, ..., 7.15.5] but the package is
+    fixed to 8.2.0 (lock file version) by a partial update
+  ```
+
+  No code change was needed. `HttpClient` uses only the `RequestOptions`
+  constants and catches `GuzzleException`, both of which Guzzle 8 keeps, and
+  requests go through TYPO3's `RequestFactory` rather than a self-built client,
+  so the PSR-7 3.x changes in Guzzle 8 do not reach this extension. The test
+  suite passes against Guzzle 7.10.0 and 8.2.0.
+
 ## [1.5.1] - 2026-09-07
 
 Result of the automated security audit (Redmine #249782).
