@@ -95,3 +95,44 @@ jobs:
           name: coverage
           path: coverage.xml
           retention-days: 14
+
+  audit:
+    name: Security audit
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: intl, json, mbstring
+          coverage: none
+          tools: composer:v2
+
+      # Deliberately no cache and a fresh resolve: the point is to see what a
+      # new installation of this extension would pull in today, not what a
+      # cached lock file happened to pin.
+      - name: Resolve dependencies
+        run: composer update --no-interaction --no-progress --prefer-dist
+
+      # Gated, unlike coverage. Because dependencies resolve fresh above, an
+      # advisory can only surface here in two cases: no fixed release exists
+      # yet, or our own constraint caps below the fix. The second is ours to
+      # fix; the first is worth knowing before a user finds out.
+      #
+      # Note that Composer 2.10 additionally refuses to *install* packages
+      # under an advisory by default (config policy.advisories.block), so the
+      # "Install dependencies" steps in the other jobs already fail on part of
+      # this. That is resolution-time blocking; this step is the explicit
+      # report, and it also covers abandoned packages.
+      - name: Audit production dependencies
+        run: composer audit --no-dev --abandoned=report
+
+      # Advisories in phpunit and friends never reach an installation of this
+      # extension. Worth seeing, not worth blocking a release over.
+      - name: Audit dev dependencies
+        run: composer audit --abandoned=report
+        continue-on-error: true
