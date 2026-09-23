@@ -9,6 +9,12 @@
             <trans-unit id="extension.description">
                 <source>AI-generated JSON-LD structured data for improved SEO and LLM visibility</source>
             </trans-unit>
+            <trans-unit id="pages.hide_jsonld">
+                <source>Do not output Enhancely JSON-LD on this page</source>
+            </trans-unit>
+            <trans-unit id="pages.hide_jsonld.description">
+                <source>Use this when the generated structured data does not fit this page. The data is still fetched and cached, it is only left out of the page source — so unchecking this shows current JSON-LD right away.</source>
+            </trans-unit>
         </body>
     </file>
 </xliff>

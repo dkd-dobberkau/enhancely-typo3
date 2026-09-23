@@ -21,6 +21,7 @@ use Enhancely\Enhancely\Client\HttpClientFactory;
 use Enhancely\Enhancely\Client\JsonLdResponse;
 use Enhancely\Enhancely\Client\UrlNormalizer;
 use Enhancely\Enhancely\Configuration\ExtensionConfigurationInterface;
+use Enhancely\Enhancely\Domain\PageSettings;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
@@ -78,9 +79,9 @@ final class JsonLdMiddleware implements MiddlewareInterface
         // TypoScriptFrontendController / $GLOBALS['TSFE'], which is removed in
         // TYPO3 v14 (see #105230). The attribute exists since v13.0, so this
         // path works unchanged on both v13 and v14.
-        $pageInformation = $request->getAttribute('frontend.page.information');
-        if ($pageInformation instanceof PageInformation) {
-            $pageType = (int)($pageInformation->getPageRecord()['doktype'] ?? 0);
+        $pageRecord = $this->pageRecord($request);
+        if ($pageRecord !== null) {
+            $pageType = (int)($pageRecord['doktype'] ?? 0);
             if (in_array($pageType, $this->configuration->getExcludedPageTypes(), true)) {
                 return false;
             }
@@ -136,6 +137,14 @@ final class JsonLdMiddleware implements MiddlewareInterface
                 return $response;
             }
 
+            // The editor switched the output off for this page in the page
+            // properties. The API call and the cache write above still ran on
+            // purpose: the entry stays warm, so unchecking the box shows
+            // current JSON-LD instead of waiting for a fresh crawl.
+            if (PageSettings::jsonLdOutputSuppressed($this->pageRecord($request))) {
+                return $response;
+            }
+
             // Inject JSON-LD before </head>
             $body = (string)$response->getBody();
             $modifiedBody = $this->insertBeforeHeadClose($body, $jsonLdScript);
@@ -150,6 +159,21 @@ final class JsonLdMiddleware implements MiddlewareInterface
             ]);
             return $response;
         }
+    }
+
+    /**
+     * The page row behind the frontend.page.information attribute.
+     *
+     * @return array<string, mixed>|null Null when no page was resolved for
+     *         this request, which is the case for every non-page route.
+     */
+    private function pageRecord(ServerRequestInterface $request): ?array
+    {
+        $pageInformation = $request->getAttribute('frontend.page.information');
+
+        return $pageInformation instanceof PageInformation
+            ? $pageInformation->getPageRecord()
+            : null;
     }
 
     private function insertBeforeHeadClose(string $html, string $jsonLd): string

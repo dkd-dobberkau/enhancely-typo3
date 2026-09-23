@@ -18,6 +18,7 @@ namespace Enhancely\Enhancely\Backend\InfoModule;
 use Enhancely\Enhancely\Backend\SanityCheck\SanityChecker;
 use Enhancely\Enhancely\Cache\JsonLdCache;
 use Enhancely\Enhancely\Configuration\ExtensionConfigurationInterface;
+use Enhancely\Enhancely\Domain\PageSettings;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use TYPO3\CMS\Backend\Template\ModuleTemplateFactory;
@@ -69,6 +70,11 @@ final class EnhancelyStatusController
         $moduleTemplate->assign('state', $state);
         $moduleTemplate->assign('pageUid', $pageUid);
         $moduleTemplate->assign('formToken', $this->refreshTokenGuard->generate($request));
+        // Read from the record the page-read gate already authorized, like the
+        // doktype above. It is not part of the ViewState: the ViewState
+        // describes what the API and the cache know about the page, while this
+        // is an editor's decision that only changes what the frontend prints.
+        $moduleTemplate->assign('outputSuppressed', PageSettings::jsonLdOutputSuppressed($pageInfo));
 
         $moduleTemplate->setTitle('Enhancely JSON-LD', $pageInfo['title'] ?? '');
         if ($pageInfo !== null) {

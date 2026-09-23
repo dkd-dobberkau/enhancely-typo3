@@ -53,6 +53,14 @@
       </f:then>
       <f:else>
 
+        <f:if condition="{outputSuppressed}">
+          <f:be.infobox
+            title="{f:translate(key:'LLL:EXT:enhancely/Resources/Private/Language/locallang_mod.xlf:output_suppressed')}"
+            message="{f:translate(key:'LLL:EXT:enhancely/Resources/Private/Language/locallang_mod.xlf:output_suppressed.detail')}"
+            state="{f:constant(name: 'TYPO3\CMS\Core\Type\ContextualFeedbackSeverity::INFO')}"
+          />
+        </f:if>
+
         <div class="d-flex align-items-center gap-2 flex-wrap mb-2">
           <f:render partial="Backend/Status" arguments="{state: state}"/>
           <code class="text-body-secondary">{state.url}</code>

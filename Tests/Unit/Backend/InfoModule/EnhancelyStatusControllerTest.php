@@ -551,4 +551,67 @@ final class EnhancelyStatusControllerTest extends TestCase
         self::assertSame(0, $assigned['pageUid']);
         self::assertNotSame(ViewState::BANNER_ACCESS_DENIED, $assigned['state']->banner);
     }
+
+    /**
+     * A page whose output the editor switched off must say so in the module.
+     * Without that the module shows JSON-LD that is nowhere in the page source
+     * and nothing explains the difference. The preview itself stays, so the
+     * editor can judge whether the generated data has become usable.
+     */
+    #[Test]
+    public function flaggedPageIsReportedAsSuppressedWithThePreviewIntact(): void
+    {
+        $fetcher = $this->createMock(\Enhancely\Enhancely\Backend\InfoModule\JsonLdFetcherInterface::class);
+        $fetcher->method('fetch')->willReturn(
+            \Enhancely\Enhancely\Client\JsonLdResponse::fromApiResponse(200, [
+                'jsonld' => ['@graph' => [['@type' => 'WebPage']]],
+                'status' => 'ready',
+            ], 'etag-fresh')
+        );
+
+        $assigned = [];
+        $controller = $this->controllerWith(
+            $this->configMock(),
+            null,
+            $this->urlResolverMock(),
+            $fetcher,
+            $this->moduleTemplateFactoryMock($assigned),
+            null,
+            $this->pageAccessCheckerMock([
+                'uid' => 4711,
+                'title' => 'Landing page',
+                'doktype' => 1,
+                'tx_enhancely_hide_jsonld' => 1,
+            ]),
+        );
+
+        $controller->__invoke($this->requestMock(['id' => 4711]));
+
+        self::assertTrue($assigned['outputSuppressed']);
+        self::assertNotNull($assigned['state']->rawJsonLd);
+    }
+
+    #[Test]
+    public function ordinaryPageIsNotReportedAsSuppressed(): void
+    {
+        $assigned = [];
+        $controller = $this->controllerWith(
+            $this->configMock(),
+            null,
+            null,
+            null,
+            $this->moduleTemplateFactoryMock($assigned),
+            null,
+            $this->pageAccessCheckerMock([
+                'uid' => 4711,
+                'title' => 'Landing page',
+                'doktype' => 1,
+                'tx_enhancely_hide_jsonld' => 0,
+            ]),
+        );
+
+        $controller->__invoke($this->requestMock(['id' => 4711]));
+
+        self::assertFalse($assigned['outputSuppressed']);
+    }
 }
