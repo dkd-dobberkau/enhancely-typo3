@@ -5,6 +5,19 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.1] - 2026-09-23
+
+### Fixed
+
+- Documentation named `database:updateschema` as the command that applies the
+  schema change. That command does not exist in TYPO3 v14 — following the
+  instructions there fails with "command not found", which makes the new
+  checkbox look broken because its column was never created. The command is
+  `extension:setup`, which has applied extension schema changes since v11.4 and
+  therefore covers both supported TYPO3 versions. Corrected in the installation
+  instructions, in the section on the per-page opt-out, and in the 1.6.0 entry
+  below.
+
 ## [1.6.0] - 2026-09-23
 
 ### Added
@@ -18,8 +31,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   that is.
 
   Adds the column `pages.tx_enhancely_hide_jsonld`, so run
-  `vendor/bin/typo3 database:updateschema` after updating. Until it runs, the
-  column is missing and every page keeps its previous behaviour.
+  `vendor/bin/typo3 extension:setup` after updating. Until it runs, the column
+  is missing and every page keeps its previous behaviour.
 
 ## [1.5.2] - 2026-09-21
 
