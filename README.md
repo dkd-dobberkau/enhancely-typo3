@@ -16,7 +16,7 @@ Enhancely automatically generates Schema.org JSON-LD structured data for your we
 
 ```bash
 composer require enhancely/enhancely-for-typo3
-vendor/bin/typo3 database:updateschema
+vendor/bin/typo3 extension:setup
 ```
 
 In Classic (non-Composer) installations, activate the extension additionally via **Admin Tools > Extensions**.
@@ -47,8 +47,9 @@ immediately, without waiting for Enhancely's next crawl.
 
 Two things to know:
 
-- The column is created by `vendor/bin/typo3 database:updateschema`. Run it after
+- The column is created by `vendor/bin/typo3 extension:setup`. Run it after
   updating the extension, or the checkbox has nowhere to store its value.
+  `--extension=enhancely` limits the run to this extension.
 - The field is marked as an *exclude field*, the TYPO3 default for page
   properties. Admins see it right away; for non-admin editors, allow
   `pages: Do not output Enhancely JSON-LD on this page` in their backend user
