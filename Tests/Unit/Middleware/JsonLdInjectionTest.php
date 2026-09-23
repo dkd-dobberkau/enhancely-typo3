@@ -34,6 +34,7 @@ use TYPO3\CMS\Core\Http\Response;
 use TYPO3\CMS\Core\Http\ServerRequest;
 use TYPO3\CMS\Core\Http\StreamFactory;
 use TYPO3\CMS\Core\Http\RequestFactory;
+use TYPO3\CMS\Frontend\Page\PageInformation;
 
 /**
  * End-to-end coverage of the injection path: a page response goes in, the API
@@ -124,9 +125,27 @@ final class JsonLdInjectionTest extends TestCase
         );
     }
 
-    private function pageRequest(string $url = 'https://example.com/page'): ServerRequestInterface
-    {
-        return new ServerRequest($url, 'GET');
+    /**
+     * @param array<string, mixed>|null $pageRecord Attached as the page record
+     *        behind the frontend.page.information attribute. Null leaves the
+     *        attribute off entirely, the way a request looks when no page was
+     *        resolved.
+     */
+    private function pageRequest(
+        string $url = 'https://example.com/page',
+        ?array $pageRecord = null,
+    ): ServerRequestInterface {
+        $request = new ServerRequest($url, 'GET');
+
+        if ($pageRecord === null) {
+            return $request;
+        }
+
+        $pageInformation = new PageInformation();
+        $pageInformation->setId((int)($pageRecord['uid'] ?? 1));
+        $pageInformation->setPageRecord($pageRecord);
+
+        return $request->withAttribute('frontend.page.information', $pageInformation);
     }
 
     private function pageHandler(): RequestHandlerInterface
@@ -261,5 +280,83 @@ final class JsonLdInjectionTest extends TestCase
         $html = (string)$middleware->process($this->pageRequest(), $handler)->getBody();
 
         self::assertSame('{"a":1}', $html);
+    }
+
+    /**
+     * The per-page opt-out an editor sets in the page properties. The page has
+     * to render exactly as it would without the extension installed.
+     */
+    #[Test]
+    public function pageFlaggedByTheEditorIsRenderedWithoutTheJsonLdBlock(): void
+    {
+        $middleware = $this->middleware(
+            [new GuzzleResponse(200, ['ETag' => '"e1"'], self::apiPayload())],
+            $this->cacheBackend()
+        );
+
+        $html = (string)$middleware
+            ->process(
+                $this->pageRequest('https://example.com/page', ['uid' => 1, 'doktype' => 1, 'tx_enhancely_hide_jsonld' => 1]),
+                $this->pageHandler()
+            )
+            ->getBody();
+
+        self::assertSame(self::PAGE_HTML, $html);
+    }
+
+    /**
+     * Suppressing the output stops at the markup: the API answer is still
+     * fetched and stored, so unchecking the box shows current JSON-LD straight
+     * away instead of waiting for a fresh crawl. Proven by the second request,
+     * which is answered 412 with no body and can only get its JSON-LD from the
+     * entry the flagged request wrote.
+     */
+    #[Test]
+    public function flaggedPageStillWarmsTheSharedCacheEntry(): void
+    {
+        $backend = $this->cacheBackend();
+
+        $flagged = $this->middleware(
+            [new GuzzleResponse(200, ['ETag' => '"e1"'], self::apiPayload())],
+            $backend
+        );
+        $flagged->process(
+            $this->pageRequest('https://example.com/page', ['uid' => 1, 'doktype' => 1, 'tx_enhancely_hide_jsonld' => 1]),
+            $this->pageHandler()
+        );
+
+        $afterUnchecking = $this->middleware([new GuzzleResponse(412)], $backend);
+        $html = (string)$afterUnchecking
+            ->process(
+                $this->pageRequest('https://example.com/page', ['uid' => 1, 'doktype' => 1, 'tx_enhancely_hide_jsonld' => 0]),
+                $this->pageHandler()
+            )
+            ->getBody();
+
+        self::assertStringContainsString('"@type":"WebPage"', $html);
+    }
+
+    /**
+     * An installation that updated the extension but has not run
+     * `database:updateschema` has no such column on its page records. That must
+     * not read as "suppressed", or the update would silently drop the JSON-LD
+     * from every page.
+     */
+    #[Test]
+    public function pageRecordWithoutTheOptOutColumnIsStillInjected(): void
+    {
+        $middleware = $this->middleware(
+            [new GuzzleResponse(200, ['ETag' => '"e1"'], self::apiPayload())],
+            $this->cacheBackend()
+        );
+
+        $html = (string)$middleware
+            ->process(
+                $this->pageRequest('https://example.com/page', ['uid' => 1, 'doktype' => 1]),
+                $this->pageHandler()
+            )
+            ->getBody();
+
+        self::assertStringContainsString('"@type":"WebPage"', $html);
     }
 }

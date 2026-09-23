@@ -5,6 +5,22 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- Editors can switch the JSON-LD output off for a single page: **Do not output
+  Enhancely JSON-LD on this page**, in the page properties under *Metadata*.
+  The page then renders without the `application/ld+json` block, while the data
+  is still fetched and cached — so unchecking the box shows current JSON-LD
+  right away instead of waiting for the next crawl. The Info module marks such a
+  page, so a preview that is not on the live page cannot be mistaken for one
+  that is.
+
+  Adds the column `pages.tx_enhancely_hide_jsonld`, so run
+  `vendor/bin/typo3 database:updateschema` after updating. Until it runs, the
+  column is missing and every page keeps its previous behaviour.
+
 ## [1.5.2] - 2026-09-21
 
 ### Fixed

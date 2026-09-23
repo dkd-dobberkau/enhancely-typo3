@@ -16,6 +16,8 @@
       <trans-unit id="banner.skipped.detail"><source>Doktype %1$s is excluded from Enhancely.</source></trans-unit>
       <trans-unit id="banner.site_error.detail"><source>%1$s</source></trans-unit>
       <trans-unit id="banner.access_denied.detail"><source>You do not have read access to page %1$s.</source></trans-unit>
+      <trans-unit id="output_suppressed"><source>Output switched off for this page</source></trans-unit>
+      <trans-unit id="output_suppressed.detail"><source>This page is set to leave the JSON-LD out of its source, so the data below is not on the live page. The setting is the "Do not output Enhancely JSON-LD on this page" checkbox in the page properties, Metadata tab.</source></trans-unit>
       <trans-unit id="badge.ready"><source>ready</source></trans-unit>
       <trans-unit id="badge.processing"><source>processing</source></trans-unit>
       <trans-unit id="badge.error"><source>error</source></trans-unit>

@@ -35,6 +35,28 @@ In Classic (non-Composer) installations, activate the extension additionally via
 | Excluded Page Types | Comma-separated doktypes to skip (e.g., `404,403`) | - |
 | Cache Lifetime | Cache duration in seconds | 86400 (24h) |
 
+### Switching a single page off
+
+Sometimes the generated structured data does not fit one particular page. In the
+page properties, **Metadata** tab, check **Do not output Enhancely JSON-LD on
+this page** and that page renders without the JSON-LD block.
+
+The data is still fetched and cached for that page, it is only left out of the
+page source. Unchecking the box therefore brings back current JSON-LD
+immediately, without waiting for Enhancely's next crawl.
+
+Two things to know:
+
+- The column is created by `vendor/bin/typo3 database:updateschema`. Run it after
+  updating the extension, or the checkbox has nowhere to store its value.
+- The field is marked as an *exclude field*, the TYPO3 default for page
+  properties. Admins see it right away; for non-admin editors, allow
+  `pages: Do not output Enhancely JSON-LD on this page` in their backend user
+  group under **Access Lists › Allowed excludefields**.
+- On page types that render no HTML of their own — shortcut, link, folder,
+  spacer — the checkbox shows up under *Extended* instead and has no effect,
+  since those pages never carry a JSON-LD block to begin with.
+
 ## How It Works
 
 ```
@@ -54,6 +76,7 @@ Request → Middleware → Enhancely API → JSON-LD injected in <head>
 - **TYPO3 Cache Integration**: Uses native caching framework
 - **Graceful Degradation**: Page renders normally if API fails
 - **URL Normalization**: Strips query params and fragments for consistent caching
+- **Per-page opt-out**: Editors can switch the output off for a single page
 
 ## Backend integration
 
@@ -66,6 +89,8 @@ The extension ships a read-only Info-module tab that shows the Enhancely status 
    - Last crawl timestamp, ETag, hash
    - Sanity checks (BreadcrumbList absolute, title mismatch, crawl freshness, payload size)
    - The raw JSON-LD payload
+   - A notice when the page is set to leave the JSON-LD out of its source, so a
+     preview that is not on the live page cannot be mistaken for one that is
 
 A **Refresh** button re-fetches from Enhancely and invalidates the shared cache for that URL. The tab does not trigger a server-side re-crawl on Enhancely — that endpoint is not exposed to customers.
 
@@ -76,6 +101,9 @@ A **Refresh** button re-fetches from Enhancely and invalidates the shared cache 
 3. Press Refresh → expect `Source: live (fresh)` and an updated cached_at line.
 4. Set an excluded doktype matching the page → expect gray "skipped".
 5. Blank the API key → expect amber "not configured" banner.
+6. Check **Do not output Enhancely JSON-LD on this page** in the page properties
+   → expect the info notice in the module, the preview still rendered, and no
+   `application/ld+json` block in the page source.
 
 ## API Response Handling
 
